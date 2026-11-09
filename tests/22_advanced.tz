@@ -1,0 +1,98 @@
+# tests/22_advanced.tz — Advanced features: defer, range-based for, default params, string intrinsics
+
+seyal test_defer(): int {
+    pathi("entering test_defer\n");
+    defer pathi("defer 1: outermost cleanup\n");
+    {
+        defer pathi("defer 2: inner block cleanup\n");
+        pathi("inside inner block\n");
+    }
+    defer pathi("defer 3: before return cleanup\n");
+    pathi("returning from test_defer\n");
+    kudu 100;
+}
+
+seyal compute(a: int, b: int = 10, c: int = 100): int {
+    kudu a + b + c;
+}
+
+vaguppu Greeter {
+    prefix: string;
+
+    seyal init(p: string) {
+        this.prefix = p;
+    }
+
+    seyal greet(name: string, exclaim: bool = true) {
+        if (exclaim) {
+            pathi("%s %s!\n", this.prefix, name);
+        } else {
+            pathi("%s %s.\n", this.prefix, name);
+        }
+    }
+}
+
+seyal test_foreach() {
+    edu numbers: int[4] = [10, 20, 30, 40];
+    pathi("for-in array:\n");
+    for (edu n in numbers) {
+        pathi("num: %d\n", n);
+    }
+
+    # Tanglish keywords: padigal (... ul ...)
+    pathi("padigal ul:\n");
+    padigal (edu x ul numbers) {
+        if (x == 30) {
+            thodar; # continue
+        }
+        pathi("item: %d\n", x);
+    }
+
+    # String iteration
+    edu word = "tamizhi";
+    pathi("string chars:\n");
+    for (edu c in word) {
+        pathi("%c ", c);
+    }
+    pathi("\n");
+}
+
+seyal test_strings() {
+    edu msg: string = "hello world";
+    pathi("length: %d\n", str_len(msg));
+    pathi("msg.length(): %d\n", msg.length());
+    pathi("msg.alavu(): %d\n", msg.alavu());
+
+    edu sub1 = str_sub(msg, 6, 5);
+    pathi("sub1: %s\n", sub1);
+
+    edu sub2 = msg.sub(0, 5);
+    pathi("sub2: %s\n", sub2);
+
+    pathi("find 'world': %d\n", str_find(msg, "world"));
+    pathi("find 'xyz': %d\n", str_find(msg, "xyz"));
+    pathi("msg.find('world'): %d\n", msg.find("world"));
+}
+
+seyal main(): int {
+    # 1. Defer test
+    edu ret = test_defer();
+    pathi("test_defer returned: %d\n", ret);
+
+    # 2. Default parameters test
+    pathi("compute(1): %d\n", compute(1));
+    pathi("compute(1, 2): %d\n", compute(1, 2));
+    pathi("compute(1, 2, 3): %d\n", compute(1, 2, 3));
+
+    edu g = new Greeter("Vanakkam");
+    g.greet("Tamizhi");
+    g.greet("World", false);
+
+    # 3. For-in test
+    test_foreach();
+
+    # 4. String intrinsics test
+    test_strings();
+
+    kudu 0;
+}

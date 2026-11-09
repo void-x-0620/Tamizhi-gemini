@@ -1,0 +1,17 @@
+serku "math_utils.tzh";
+
+seyal compute_add(a : int, b : int) : int {
+    kudu a + b;
+}
+
+seyal main() : int {
+    edu n : Number = 10;
+    edu p : Point;
+    p.x = 3;
+    p.y = 4;
+    pathi("add = %d\n", compute_add(n, 5));
+    pathi("mul = %d\n", compute_mul(n, 5));
+    pathi("dist = %d\n", p.dist_sq());
+    kudu 0;
+}
+

@@ -1,0 +1,68 @@
+vaguppu Animal {
+    name : string;
+    seyal uruvakku(name : string) {
+        this.name = name;
+    }
+    seyal speak() : void {
+        pathi("Animal %s speaks\n", this.name);
+    }
+}
+
+vaguppu Dog : Animal {
+    seyal uruvakku(name : string) {
+        this.name = name;
+    }
+    seyal speak() : void {
+        super.speak();
+        pathi("Dog %s barks\n", this.name);
+    }
+}
+
+seyal main() : int {
+    # 1. Character literals
+    edu c : char = 'Z';
+    pathi("char = %c\n", c);
+
+    # 2. Hex, binary, octal numbers
+    edu hex_val : int = 0xFF;
+    edu bin_val : int = 0b1011;
+    edu oct_val : int = 0o77;
+    pathi("hex = %d, bin = %d, oct = %d\n", hex_val, bin_val, oct_val);
+
+    # 3. Scientific notation floats
+    edu sci : float = 1.5e2;
+    pathi("sci = %.1f\n", sci);
+
+    # 4. Null literals (null and maru)
+    edu p1 : int* = null;
+    edu p2 : int* = maru;
+    if (p1 == null && p2 == maru) {
+        pathi("null check passed\n");
+    }
+
+    # 5. Sizeof (sizeof and alavu)
+    edu sz_int : int = sizeof(int);
+    edu sz_alavu : int = alavu(int);
+    if (sz_int > 0 && sz_int == sz_alavu) {
+        pathi("sizeof check passed\n");
+    }
+
+    # 6. Type Casting (cast<T>, mathu<T>, and (T))
+    edu f : float = 42.9;
+    edu i1 : int = cast<int>(f);
+    edu i2 : int = mathu<int>(f);
+    edu i3 : int = (int)f;
+    pathi("casts: %d %d %d\n", i1, i2, i3);
+
+    # 7. Super method calls
+    edu d : Dog* = new Dog("Buddy");
+    d->speak();
+
+    # 8. Deallocation (delete and azhi)
+    delete d;
+    edu pheap : Animal* = new Animal("Heap");
+    azhi pheap;
+    pathi("delete passed\n");
+
+    kudu 0;
+}

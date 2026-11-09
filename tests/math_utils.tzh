@@ -1,0 +1,20 @@
+# Tamizhi Header File (.tzh)
+typedef int Number;
+
+kattamaipu Point {
+    x : int;
+    y : int;
+
+    seyal dist_sq() : int {
+        kudu this.x * this.x + this.y * this.y;
+    }
+}
+
+# Function prototype forward declaration
+seyal compute_add(a : int, b : int) : int;
+
+# Inline function defined in header
+seyal compute_mul(a : int, b : int) : int {
+    kudu a * b;
+}
+

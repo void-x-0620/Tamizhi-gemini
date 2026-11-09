@@ -1,0 +1,27 @@
+# Tamizhi Standard Library Header (std.tzh)
+# Provides core type definitions, common constants, and utility helpers.
+
+typedef int64_t  Int;
+typedef uint64_t UInt;
+typedef double   Float;
+typedef char*    String;
+
+# Common integer helpers
+seyal min(a : int, b : int) : int {
+    kudu (a < b) ? a : b;
+}
+
+seyal max(a : int, b : int) : int {
+    kudu (a > b) ? a : b;
+}
+
+seyal abs(x : int) : int {
+    kudu (x < 0) ? -x : x;
+}
+
+seyal clamp(val : int, low : int, high : int) : int {
+    if (val < low) kudu low;
+    if (val > high) kudu high;
+    kudu val;
+}
+

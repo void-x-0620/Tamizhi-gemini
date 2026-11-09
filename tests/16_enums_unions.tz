@@ -1,0 +1,53 @@
+# Enums, Unions, Switch/Case and Typedef
+enum Color {
+    RED = 1,
+    GREEN = 5,
+    BLUE = 10
+}
+
+union Number {
+    i : int;
+    f : float;
+}
+
+typedef int Integer;
+
+seyal print_color(c : Color) : void {
+    switch (c) {
+        case 1: {
+            pathi("Color is RED (%d)\n", c);
+            break;
+        }
+        case 5: {
+            pathi("Color is GREEN (%d)\n", c);
+            break;
+        }
+        case 10: {
+            pathi("Color is BLUE (%d)\n", c);
+            break;
+        }
+        default: {
+            pathi("Unknown color\n");
+            break;
+        }
+    }
+}
+
+seyal main() : int {
+    edu c1 : Color = RED;
+    edu c2 : Color = GREEN;
+    edu c3 : Color = BLUE;
+
+    print_color(c1);
+    print_color(c2);
+    print_color(c3);
+
+    edu num : Number;
+    num.i = 42;
+    pathi("Number as int: %d\n", num.i);
+
+    edu my_int : Integer = 100;
+    pathi("Typedef integer: %d\n", my_int);
+
+    kudu 0;
+}

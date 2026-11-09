@@ -1,0 +1,23 @@
+# Const and Static variables and static functions
+const edu MAX_USERS : int = 100;
+static edu server_running : bool = true;
+
+static seyal next_id() : int {
+    static edu counter : int = 0;
+    counter = counter + 1;
+    kudu counter;
+}
+
+seyal compute(multiplier : int) : int {
+    const edu base : int = 10;
+    kudu base * multiplier;
+}
+
+seyal main() : int {
+    pathi("MAX_USERS = %d, server_running = %d\n", MAX_USERS, server_running);
+    pathi("id 1 = %d\n", next_id());
+    pathi("id 2 = %d\n", next_id());
+    pathi("id 3 = %d\n", next_id());
+    pathi("compute(5) = %d\n", compute(5));
+    kudu 0;
+}

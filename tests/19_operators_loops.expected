@@ -1,0 +1,9 @@
+sum 1..5 = 15
+do-while count = 3
+a & b = 8
+a | b = 14
+a ^ b = 6
+a << 1 = 24
+a >> 1 = 6
+max(a, b) = 12
+Grade: B

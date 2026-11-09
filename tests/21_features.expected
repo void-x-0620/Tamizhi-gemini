@@ -1,0 +1,10 @@
+char = Z
+hex = 255, bin = 11, oct = 63
+sci = 150.0
+null check passed
+sizeof check passed
+casts: 42 42 42
+Animal Buddy speaks
+Dog Buddy barks
+delete passed
+

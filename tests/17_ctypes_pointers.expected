@@ -1,0 +1,6 @@
+char=A, short=1234, int=56789, long=987654321, double=3.14
+uint=42, size_t=1024, int32=100, uint8=255
+before swap: x=10, y=20
+after swap: x=20, y=10
+v length_sq = 25
+scaled v: x=6, y=8, length_sq=100

@@ -1,0 +1,47 @@
+# OOP in Tamizhi: classes, inheritance, constructor, methods, this, new
+vaguppu Animal {
+    name : string;
+    age  : int;
+
+    seyal uruvakku(name : string, age : int) {
+        this.name = name;
+        this.age = age;
+    }
+
+    seyal speak() : void {
+        pathi("%s makes a sound, age %d\n", this.name, this.age);
+    }
+}
+
+vaguppu Dog : Animal {
+    breed : string;
+
+    seyal uruvakku(name : string, age : int, breed : string) {
+        this.name = name;
+        this.age = age;
+        this.breed = breed;
+    }
+
+    seyal speak() : void {
+        pathi("%s the %s barks! Woof!\n", this.name, this.breed);
+    }
+
+    seyal fetch() : void {
+        pathi("%s fetches the ball!\n", this.name);
+    }
+}
+
+seyal main() : int {
+    edu a : Animal = Animal("Generic", 5);
+    a.speak();
+
+    edu d : Dog = Dog("Buddy", 3, "Golden");
+    d.speak();
+    d.fetch();
+
+    edu dog_ptr : Dog* = new Dog("Max", 2, "Husky");
+    dog_ptr->speak();
+    dog_ptr->fetch();
+
+    kudu 0;
+}

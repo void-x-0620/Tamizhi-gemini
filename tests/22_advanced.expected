@@ -1,0 +1,32 @@
+entering test_defer
+inside inner block
+defer 2: inner block cleanup
+returning from test_defer
+defer 3: before return cleanup
+defer 1: outermost cleanup
+test_defer returned: 100
+compute(1): 111
+compute(1, 2): 103
+compute(1, 2, 3): 6
+Vanakkam Tamizhi!
+Vanakkam World.
+for-in array:
+num: 10
+num: 20
+num: 30
+num: 40
+padigal ul:
+item: 10
+item: 20
+item: 40
+string chars:
+t a m i z h i 
+length: 11
+msg.length(): 11
+msg.alavu(): 11
+sub1: world
+sub2: hello
+find 'world': 6
+find 'xyz': -1
+msg.find('world'): 6
+

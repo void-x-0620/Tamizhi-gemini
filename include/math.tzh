@@ -1,0 +1,26 @@
+# Tamizhi Math Library Header (math.tzh)
+# Provides floating-point math constants and helpers.
+
+const edu PI : float = 3.14159265358979323846;
+const edu E  : float = 2.71828182845904523536;
+
+seyal fmin(a : float, b : float) : float {
+    kudu (a < b) ? a : b;
+}
+
+seyal fmax(a : float, b : float) : float {
+    kudu (a > b) ? a : b;
+}
+
+seyal fabs(x : float) : float {
+    kudu (x < 0.0) ? -x : x;
+}
+
+seyal square(x : float) : float {
+    kudu x * x;
+}
+
+seyal lerp(a : float, b : float, t : float) : float {
+    kudu a + (b - a) * t;
+}
+

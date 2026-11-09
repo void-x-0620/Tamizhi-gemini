@@ -1,0 +1,55 @@
+# C types, pointers, address-of (&), dereference (*), arrow (->), and struct methods
+kattamaipu Vector2 {
+    x : int;
+    y : int;
+
+    seyal length_sq() : int {
+        kudu this.x * this.x + this.y * this.y;
+    }
+
+    seyal scale(factor : int) : void {
+        this.x = this.x * factor;
+        this.y = this.y * factor;
+    }
+}
+
+seyal swap(a : int*, b : int*) : void {
+    edu tmp : int = *a;
+    *a = *b;
+    *b = tmp;
+}
+
+seyal main() : int {
+    # Various C types
+    edu c : char = 65;
+    edu s : short = 1234;
+    edu i : int = 56789;
+    edu l : long = 987654321;
+    edu d : double = 3.14159;
+    edu u : unsigned int = 42;
+    edu sz : size_t = 1024;
+    edu i32 : int32_t = 100;
+    edu u8 : uint8_t = 255;
+
+    pathi("char=%c, short=%d, int=%d, long=%d, double=%.2f\n", c, s, i, l, d);
+    pathi("uint=%d, size_t=%d, int32=%d, uint8=%d\n", u, sz, i32, u8);
+
+    # Pointers and swap
+    edu x : int = 10;
+    edu y : int = 20;
+    pathi("before swap: x=%d, y=%d\n", x, y);
+    swap(&x, &y);
+    pathi("after swap: x=%d, y=%d\n", x, y);
+
+    # Struct with method and pointer with arrow
+    edu v : Vector2;
+    v.x = 3;
+    v.y = 4;
+    pathi("v length_sq = %d\n", v.length_sq());
+
+    edu vp : Vector2* = &v;
+    vp->scale(2);
+    pathi("scaled v: x=%d, y=%d, length_sq=%d\n", vp->x, vp->y, vp->length_sq());
+
+    kudu 0;
+}

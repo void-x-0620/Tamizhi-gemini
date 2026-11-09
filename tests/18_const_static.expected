@@ -1,0 +1,5 @@
+MAX_USERS = 100, server_running = 1
+id 1 = 1
+id 2 = 2
+id 3 = 3
+compute(5) = 50
