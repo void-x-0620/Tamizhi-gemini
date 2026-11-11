@@ -6,6 +6,7 @@
 
 static void gen_stmt(CodeGen *cg, Node *n);
 static void gen_expr(CodeGen *cg, Node *n);
+static void gen_to_string(CodeGen *cg, Node *n);
 
 /* ─── Output helpers ──────────────────────────────────────────────────── */
 static void emit(CodeGen *cg, const char *s) { strbuf_append(&cg->out, s); }
@@ -287,6 +288,18 @@ static Node *simplify(CodeGen *cg, Node *n) {
             n->ternary.then_expr = simplify(cg, n->ternary.then_expr);
             n->ternary.else_expr = simplify(cg, n->ternary.else_expr);
             return n;
+        case NK_NULL_COALESCE:
+            n->binary.left  = simplify(cg, n->binary.left);
+            n->binary.right = simplify(cg, n->binary.right);
+            return n;
+        case NK_RANGE:
+            n->range.start = simplify(cg, n->range.start);
+            n->range.end   = simplify(cg, n->range.end);
+            return n;
+        case NK_STRING_INTERP:
+            for (NodeList *pt = n->string_interp.parts; pt; pt = pt->next)
+                pt->node = simplify(cg, pt->node);
+            return n;
         default:
             return n;
     }
@@ -529,7 +542,8 @@ static void gen_expr(CodeGen *cg, Node *n) {
                 emit(cg, "_tmp; })");
             } else {
                 if (n->call.cname) {
-                    if (!strncmp(n->call.cname, "tz_str_", 7)) cg->uses_heap = true;
+                    if (!strncmp(n->call.cname, "tz_str_", 7) ||
+                        !strncmp(n->call.cname, "tz_file_", 8)) cg->uses_heap = true;
                     emit(cg, n->call.cname);
                 } else {
                     emit_ident(cg, n->call.name);
@@ -545,6 +559,20 @@ static void gen_expr(CodeGen *cg, Node *n) {
 
         case NK_METHOD_CALL: {
             TypeInfo *ot = n->method_call.object->type;
+            if (ot && ot->kind == TY_ARRAY) {
+                if (!strcmp(n->method_call.method, "length") || !strcmp(n->method_call.method, "alavu")) {
+                    if (ot->array_size > 0) {
+                        emitf(cg, "%d", ot->array_size);
+                    } else {
+                        emit(cg, "(int)(sizeof(");
+                        gen_expr(cg, n->method_call.object);
+                        emit(cg, ") / sizeof((");
+                        gen_expr(cg, n->method_call.object);
+                        emit(cg, ")[0]))");
+                    }
+                    break;
+                }
+            }
             if (ot && ot->kind == TY_STRING) {
                 cg->uses_heap = true;
                 if (!strcmp(n->method_call.method, "length") || !strcmp(n->method_call.method, "alavu")) {
@@ -624,9 +652,66 @@ static void gen_expr(CodeGen *cg, Node *n) {
             emit_ident(cg, n->arrow.field);
             break;
 
+        case NK_NULL_COALESCE: {
+            emit(cg, "({ __typeof__(");
+            gen_expr(cg, n->binary.left);
+            emit(cg, ") _nc = (");
+            gen_expr(cg, n->binary.left);
+            emit(cg, "); _nc != NULL ? _nc : (");
+            gen_expr(cg, n->binary.right);
+            emit(cg, "); })");
+            break;
+        }
+
+        case NK_STRING_INTERP: {
+            cg->uses_heap = true;
+            NodeList *pt = n->string_interp.parts;
+            if (!pt) {
+                emit(cg, "\"\"");
+                break;
+            }
+            if (!pt->next) {
+                gen_to_string(cg, pt->node);
+                break;
+            }
+            int count = 0;
+            for (NodeList *cur = pt; cur; cur = cur->next) count++;
+            for (int i = 0; i < count - 1; i++) emit(cg, "tz_concat(");
+            gen_to_string(cg, pt->node);
+            for (NodeList *cur = pt->next; cur; cur = cur->next) {
+                emit(cg, ", ");
+                gen_to_string(cg, cur->node);
+                emit(cg, ")");
+            }
+            break;
+        }
+
         default:
             emit(cg, "0 /* unsupported */");
             break;
+    }
+}
+
+static void gen_to_string(CodeGen *cg, Node *n) {
+    TypeInfo *t = n->type;
+    if (t && t->kind == TY_STRING) {
+        gen_expr(cg, n);
+    } else if (t && (t->kind == TY_FLOAT || t->kind == TY_DOUBLE)) {
+        emit(cg, "tz_to_str_float(");
+        gen_expr(cg, n);
+        emit(cg, ")");
+    } else if (t && t->kind == TY_BOOL) {
+        emit(cg, "tz_to_str_bool(");
+        gen_expr(cg, n);
+        emit(cg, ")");
+    } else if (t && t->kind == TY_CHAR) {
+        emit(cg, "tz_to_str_char(");
+        gen_expr(cg, n);
+        emit(cg, ")");
+    } else {
+        emit(cg, "tz_to_str_int(");
+        gen_expr(cg, n);
+        emit(cg, ")");
     }
 }
 
@@ -905,7 +990,37 @@ static void gen_stmt(CodeGen *cg, Node *n) {
             cg->indent++;
             int loop_id = cg->unique_id++;
             TypeInfo *arr_type = n->foreach_stmt.array->type;
-            if (arr_type && arr_type->kind == TY_STRING) {
+            if (n->foreach_stmt.array->kind == NK_RANGE) {
+                Node *rng = n->foreach_stmt.array;
+                indent(cg);
+                emitf(cg, "long long __tz_start_%d = (long long)(", loop_id);
+                gen_expr(cg, rng->range.start);
+                emit(cg, ");\n");
+                indent(cg);
+                emitf(cg, "long long __tz_end_%d = (long long)(", loop_id);
+                gen_expr(cg, rng->range.end);
+                emit(cg, ");\n");
+                indent(cg);
+                emit(cg, "for (");
+                gen_decl(cg, n->foreach_stmt.var_type, n->foreach_stmt.var_name, false);
+                emitf(cg, " = __tz_start_%d; ", loop_id);
+                emit_ident(cg, n->foreach_stmt.var_name);
+                emitf(cg, " %s __tz_end_%d; ", rng->range.inclusive ? "<=" : "<", loop_id);
+                emit_ident(cg, n->foreach_stmt.var_name);
+                emit(cg, "++) {\n");
+                cg->indent++;
+                if (n->foreach_stmt.body->kind == NK_BLOCK) {
+                    for (NodeList *it = n->foreach_stmt.body->block.stmts; it; it = it->next) {
+                        gen_stmt(cg, it->node);
+                        if (terminates(it->node)) break;
+                    }
+                } else {
+                    gen_stmt(cg, n->foreach_stmt.body);
+                }
+                cg->indent--;
+                indent(cg);
+                emit(cg, "}\n");
+            } else if (arr_type && arr_type->kind == TY_STRING) {
                 indent(cg);
                 emitf(cg, "const char *__tz_arr_%d = ", loop_id);
                 gen_expr(cg, n->foreach_stmt.array);
@@ -1204,6 +1319,45 @@ static const char RT_COMMON[] =
     "    memcpy(r, a, la);\n"
     "    memcpy(r + la, b, lb + 1);\n"
     "    return r;\n"
+    "}\n"
+    "static const char *tz_to_str_int(long long v) {\n"
+    "    char buf[64];\n"
+    "    snprintf(buf, sizeof(buf), \"%lld\", v);\n"
+    "    size_t len = strlen(buf);\n"
+    "    char *r = (char *)tz_alloc(len + 1);\n"
+    "    memcpy(r, buf, len + 1);\n"
+    "    return r;\n"
+    "}\n"
+    "static const char *tz_to_str_float(double v) {\n"
+    "    char buf[64];\n"
+    "    snprintf(buf, sizeof(buf), \"%g\", v);\n"
+    "    size_t len = strlen(buf);\n"
+    "    char *r = (char *)tz_alloc(len + 1);\n"
+    "    memcpy(r, buf, len + 1);\n"
+    "    return r;\n"
+    "}\n"
+    "static const char *tz_to_str_bool(bool v) {\n"
+    "    return v ? \"true\" : \"false\";\n"
+    "}\n"
+    "static const char *tz_to_str_char(char v) {\n"
+    "    char *r = (char *)tz_alloc(2);\n"
+    "    r[0] = v;\n"
+    "    r[1] = '\\0';\n"
+    "    return r;\n"
+    "}\n"
+    "static const char *tz_file_read(const char *path) {\n"
+    "    if (!path) return \"\";\n"
+    "    FILE *f = fopen(path, \"rb\");\n"
+    "    if (!f) return \"\";\n"
+    "    fseek(f, 0, SEEK_END);\n"
+    "    long sz = ftell(f);\n"
+    "    fseek(f, 0, SEEK_SET);\n"
+    "    if (sz < 0) { fclose(f); return \"\"; }\n"
+    "    char *buf = (char *)tz_alloc((size_t)sz + 1);\n"
+    "    size_t read_bytes = fread(buf, 1, (size_t)sz, f);\n"
+    "    buf[read_bytes] = '\\0';\n"
+    "    fclose(f);\n"
+    "    return buf;\n"
     "}\n\n";
 
 static const char RT_GC[] =
@@ -1284,7 +1438,27 @@ void codegen_generate(CodeGen *cg, Node *prog) {
              "#include <string.h>\n"
              "#include <stdint.h>\n"
              "#include <stddef.h>\n"
-             "#include <stdbool.h>\n");
+             "#include <stdbool.h>\n"
+             "#include <math.h>\n\n"
+             "static inline double tz_math_sqrt(double x) { return sqrt(x); }\n"
+             "static inline double tz_math_pow(double x, double y) { return pow(x, y); }\n"
+             "static inline long long tz_math_abs(long long x) { return x < 0 ? -x : x; }\n"
+             "static inline long long tz_math_min(long long a, long long b) { return a < b ? a : b; }\n"
+             "static inline long long tz_math_max(long long a, long long b) { return a > b ? a : b; }\n"
+             "static inline bool tz_file_exists(const char *path) {\n"
+             "    if (!path) return false;\n"
+             "    FILE *f = fopen(path, \"rb\");\n"
+             "    if (f) { fclose(f); return true; }\n"
+             "    return false;\n"
+             "}\n"
+             "static inline bool tz_file_write(const char *path, const char *content) {\n"
+             "    if (!path) return false;\n"
+             "    FILE *f = fopen(path, \"wb\");\n"
+             "    if (!f) return false;\n"
+             "    if (content) fputs(content, f);\n"
+             "    fclose(f);\n"
+             "    return true;\n"
+             "}\n\n");
     for (NodeList *it = prog->program.decls; it; it = it->next)
         if (it->node->kind == NK_EXTERN_HEADER)
             emitf(cg, "#include %s\n", it->node->extern_header.spec);

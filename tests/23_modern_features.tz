@@ -1,0 +1,79 @@
+# tests/23_modern_features.tz — Range loops, ?? null coalesce, f"..." interpolation, array length, math, file I/O
+
+seyal test_ranges() {
+    pathi("range half-open:\n");
+    for (edu i in 0..5) {
+        pathi("%d ", i);
+    }
+    pathi("\n");
+
+    pathi("range inclusive:\n");
+    padigal (edu j ul 1..=5) {
+        pathi("%d ", j);
+    }
+    pathi("\n");
+}
+
+seyal test_null_coalesce() {
+    edu a: string = null;
+    edu b: string = "fallback";
+    edu c: string = "original";
+
+    edu r1: string = a ?? b;
+    edu r2: string = c ?? b;
+
+    pathi("r1: %s\n", r1);
+    pathi("r2: %s\n", r2);
+}
+
+seyal test_interpolation() {
+    edu name: string = "Tamizhi";
+    edu ver: int = 2;
+    edu active: bool = true;
+
+    edu greeting: string = f"Welcome to {name} v{ver}! active: {active}";
+    pathi("%s\n", greeting);
+
+    edu calc: string = f"Math calc: 2 + 3 = {2 + 3}";
+    pathi("%s\n", calc);
+}
+
+seyal test_array_length() {
+    edu arr: int[5] = [1, 2, 3, 4, 5];
+    pathi("arr.length(): %d\n", arr.length());
+    pathi("arr.alavu(): %d\n", arr.alavu());
+}
+
+seyal test_math() {
+    edu sq: float = math_sqrt(25.0);
+    edu p: float = math_pow(2.0, 3.0);
+    edu a: int = math_abs(-42);
+    edu mn: int = math_min(10, 20);
+    edu mx: int = math_max(10, 20);
+
+    pathi("sqrt(25): %d\n", (int)sq);
+    pathi("pow(2, 3): %d\n", (int)p);
+    pathi("abs(-42): %d\n", a);
+    pathi("min(10, 20): %d\n", mn);
+    pathi("max(10, 20): %d\n", mx);
+}
+
+seyal test_file_io() {
+    edu path: string = "/tmp/tamizhi_modern_test.txt";
+    edu written: bool = file_write(path, "Tamizhi File I/O Works!");
+    pathi("file written: %d\n", written ? 1 : 0);
+    pathi("file exists: %d\n", file_exists(path) ? 1 : 0);
+
+    edu content: string = file_read(path);
+    pathi("file content: %s\n", content);
+}
+
+seyal main(): int {
+    test_ranges();
+    test_null_coalesce();
+    test_interpolation();
+    test_array_length();
+    test_math();
+    test_file_io();
+    kudu 0;
+}

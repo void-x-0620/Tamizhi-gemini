@@ -1142,8 +1142,36 @@ static Node *parse_assignment(Parser *p) {
     return left;
 }
 
+static Node *parse_range(Parser *p) {
+    Node *left = parse_binary_level(p, 0);
+    if (check(p, TOK_DOT_DOT) || check(p, TOK_DOT_DOT_EQ)) {
+        Token op = advance(p);
+        bool incl = op.type == TOK_DOT_DOT_EQ;
+        Node *right = parse_binary_level(p, 0);
+        Node *rn = node_new(p->arena, NK_RANGE, op.line, op.col);
+        rn->range.start = left;
+        rn->range.end = right;
+        rn->range.inclusive = incl;
+        return rn;
+    }
+    return left;
+}
+
+static Node *parse_null_coalesce(Parser *p) {
+    Node *n = parse_range(p);
+    while (check(p, TOK_QUESTION_QUESTION)) {
+        Token qtok = advance(p);
+        Node *rhs = parse_range(p);
+        Node *b = node_new(p->arena, NK_NULL_COALESCE, qtok.line, qtok.col);
+        b->binary.left = n;
+        b->binary.right = rhs;
+        n = b;
+    }
+    return n;
+}
+
 static Node *parse_ternary(Parser *p) {
-    Node *cond = parse_binary_level(p, 0);
+    Node *cond = parse_null_coalesce(p);
     if (match(p, TOK_QUESTION)) {
         Token qtok = peek(p);
         Node *then_e = parse_expr(p);
@@ -1323,6 +1351,50 @@ static Node *parse_postfix(Parser *p) {
     }
 }
 
+static Node *parse_fstring(Parser *p, Token tok) {
+    Node *res = node_new(p->arena, NK_STRING_INTERP, tok.line, tok.col);
+    NodeListBuilder b = {0};
+    const char *s = tok.val.str_val;
+    while (*s) {
+        if (*s == '{') {
+            s++;
+            const char *expr_start = s;
+            int depth = 1;
+            while (*s && depth > 0) {
+                if (*s == '{') depth++;
+                else if (*s == '}') depth--;
+                if (depth > 0) s++;
+            }
+            if (depth > 0) {
+                syntax_error(p, tok, "unterminated '{' in interpolated string");
+                break;
+            }
+            size_t expr_len = (size_t)(s - expr_start);
+            char *expr_str = arena_strndup(p->arena, expr_start, expr_len);
+            s++; /* skip '}' */
+
+            Lexer sub_lex;
+            lexer_init(&sub_lex, expr_str, p->lexer->filename, p->arena);
+            sub_lex.line = tok.line;
+            sub_lex.col = tok.col;
+            Parser sub_p = *p;
+            sub_p.lexer = &sub_lex;
+            Node *expr_node = parse_expr(&sub_p);
+            nlb_push(p->arena, &b, expr_node);
+        } else {
+            const char *lit_start = s;
+            while (*s && *s != '{') s++;
+            size_t lit_len = (size_t)(s - lit_start);
+            char *lit_str = arena_strndup(p->arena, lit_start, lit_len);
+            Node *lit_node = node_new(p->arena, NK_STRING_LIT, tok.line, tok.col);
+            lit_node->string_lit.value = lit_str;
+            nlb_push(p->arena, &b, lit_node);
+        }
+    }
+    res->string_interp.parts = b.head;
+    return res;
+}
+
 static Node *parse_primary(Parser *p) {
     Token tok = peek(p);
     switch (tok.type) {
@@ -1343,6 +1415,10 @@ static Node *parse_primary(Parser *p) {
             Node *n = node_new(p->arena, NK_STRING_LIT, tok.line, tok.col);
             n->string_lit.value = tok.val.str_val;
             return n;
+        }
+        case TOK_FSTRING_LIT: {
+            advance(p);
+            return parse_fstring(p, tok);
         }
         case TOK_CHAR_LIT: {
             advance(p);

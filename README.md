@@ -1,9 +1,9 @@
-# Tamizhi (v2.2.0)
+# Tamizhi (v2.3.0)
 
 A compiler for Tamizhi (a Tanglish and C-compatible language) written in C.
 It translates Tamizhi source directly to optimized C99 and compiles with the host C compiler (GCC/Clang), producing high-performance native binaries with zero interpretation overhead.
 
-Version 2.2.0 adds **Enhanced Diagnostics** (line gutters, source snippets, caret pointers, terminal ANSI coloring, and fuzzy "did you mean?" suggestions), **Scope-Exit Cleanup (`defer` / `pinbu`)**, **Range-Based Loops (`for ... in ...` / `padigal ... ul ...`)**, **Default Parameter Values**, **Built-in String Intrinsics & Methods (`str_len`, `s.length()`, `str_sub`, `str_find`)**, **Tamizhi Header Files (`.tzh`)**, prototypes/forward declarations, `null` / `maru`, `delete` / `azhi`, `super` / `thai`, and literal extensions.
+Version 2.3.0 adds **Integer Range Expressions (`0..10`, `1..=5`)**, **Null-Coalescing Operator (`??`)**, **String Interpolation (`f"..."`)**, **Array `.length()` and `.alavu()` methods**, **Native File I/O Intrinsics (`file_read`, `file_write`, `file_exists`)**, **Math Intrinsics (`math_sqrt`, `math_pow`, `math_abs`, `math_min`, `math_max`)**, along with earlier **Enhanced Diagnostics**, **Scope-Exit Cleanup (`defer` / `pinbu`)**, **Range-Based Loops (`for ... in ...` / `padigal ... ul ...`)**, **Default Parameter Values**, **Built-in String Intrinsics & Methods (`str_len`, `s.length()`, `str_sub`, `str_find`)**, and **Tamizhi Header Files (`.tzh`)**.
 
 ---
 
@@ -465,13 +465,84 @@ example.tz:4:11: error: undeclared identifier 'y'; did you mean 'x'?
 
 ---
 
+### 11. Modern Advanced Language Features (v2.3.0)
+
+#### Integer Range Loops (`..` and `..=`)
+Iterate with half-open (`start..end`) or closed/inclusive (`start..=end`) ranges without manual loop index management:
+```tamizhi
+# Half-open range (0, 1, 2, 3, 4):
+for (edu i in 0..5) {
+    pathi("%d ", i);
+}
+
+# Inclusive range (1, 2, 3, 4, 5) with Tanglish keywords:
+padigal (edu j ul 1..=5) {
+    pathi("%d ", j);
+}
+```
+
+#### Null-Coalescing Operator (`??`)
+Evaluates to the right-hand operand when the left-hand operand is null:
+```tamizhi
+edu name: string = null;
+edu display: string = name ?? "Anonymous";
+
+edu ptr: int* = null;
+edu fallback_val: int = 100;
+edu safe_ptr: int* = ptr ?? &fallback_val;
+```
+
+#### String Interpolation (`f"..."`)
+Embed variables and arbitrary expressions directly into strings with `{expr}`:
+```tamizhi
+edu lang: string = "Tamizhi";
+edu major: int = 2;
+edu minor: int = 3;
+
+edu greeting: string = f"Language: {lang} v{major}.{minor}!";
+# "Language: Tamizhi v2.3!"
+
+edu summary: string = f"2 + 3 = {2 + 3}, sqrt(16) = {math_sqrt(16.0)}";
+```
+
+#### Array `.length()` and `.alavu()` Methods
+Query the length of fixed-size arrays cleanly as a method:
+```tamizhi
+edu numbers: int[5] = [10, 20, 30, 40, 50];
+pathi("length: %d\n", numbers.length());   # 5
+pathi("alavu: %d\n", numbers.alavu());     # 5
+```
+
+#### Native Math Intrinsics
+High-performance inline math utilities backed by the C runtime library:
+```tamizhi
+edu s: float = math_sqrt(25.0);       # 5.0
+edu p: float = math_pow(2.0, 3.0);    # 8.0
+edu a: int = math_abs(-42);           # 42
+edu lo: int = math_min(10, 20);       # 10
+edu hi: int = math_max(10, 20);       # 20
+```
+
+#### Native File I/O Intrinsics
+Read and write text or binary files directly from Tamizhi:
+```tamizhi
+edu path: string = "data.txt";
+edu ok: bool = file_write(path, "Hello from Tamizhi!");
+if (file_exists(path)) {
+    edu content: string = file_read(path);
+    pathi("Read %s: %s\n", path, content);
+}
+```
+
+---
+
 ## Testing
 
 ```sh
 make test
 ```
-Runs 53 test suites:
-- 22 program tests (`tests/01_hello.tz` to `tests/22_advanced.tz`)
+Runs 54 test suites:
+- 23 program tests (`tests/01_hello.tz` to `tests/23_modern_features.tz`)
 - 20 compile-error diagnostic tests (`tests/errors/`)
 - C FFI bindings tests (`tests/ext/`)
 - Heap and Boehm GC tests (`tests/heap/`)

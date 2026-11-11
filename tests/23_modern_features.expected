@@ -1,0 +1,18 @@
+range half-open:
+0 1 2 3 4 
+range inclusive:
+1 2 3 4 5 
+r1: fallback
+r2: original
+Welcome to Tamizhi v2! active: true
+Math calc: 2 + 3 = 5
+arr.length(): 5
+arr.alavu(): 5
+sqrt(25): 5
+pow(2, 3): 8
+abs(-42): 42
+min(10, 20): 10
+max(10, 20): 20
+file written: 1
+file exists: 1
+file content: Tamizhi File I/O Works!

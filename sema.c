@@ -67,6 +67,98 @@ static Symbol *lookup(Sema *s, const char *name) {
         y->params = p1;
         return y;
     }
+    if (!strcmp(name, "file_read")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = "file_read";
+        y->kind = SYM_FUNC;
+        y->type = &ty_string;
+        y->cname = "tz_file_read";
+        y->params = param_new(s->arena, "path", &ty_string);
+        return y;
+    }
+    if (!strcmp(name, "file_write")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = "file_write";
+        y->kind = SYM_FUNC;
+        y->type = &ty_bool;
+        y->cname = "tz_file_write";
+        Param *p1 = param_new(s->arena, "path", &ty_string);
+        Param *p2 = param_new(s->arena, "content", &ty_string);
+        p1->next = p2;
+        y->params = p1;
+        return y;
+    }
+    if (!strcmp(name, "file_exists")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = "file_exists";
+        y->kind = SYM_FUNC;
+        y->type = &ty_bool;
+        y->cname = "tz_file_exists";
+        y->params = param_new(s->arena, "path", &ty_string);
+        return y;
+    }
+    if (!strcmp(name, "math_sqrt")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = "math_sqrt";
+        y->kind = SYM_FUNC;
+        y->type = &ty_float;
+        y->cname = "tz_math_sqrt";
+        y->params = param_new(s->arena, "x", &ty_float);
+        return y;
+    }
+    if (!strcmp(name, "math_pow")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = "math_pow";
+        y->kind = SYM_FUNC;
+        y->type = &ty_float;
+        y->cname = "tz_math_pow";
+        Param *p1 = param_new(s->arena, "x", &ty_float);
+        Param *p2 = param_new(s->arena, "y", &ty_float);
+        p1->next = p2;
+        y->params = p1;
+        return y;
+    }
+    if (!strcmp(name, "math_abs")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = "math_abs";
+        y->kind = SYM_FUNC;
+        y->type = &ty_int;
+        y->cname = "tz_math_abs";
+        y->params = param_new(s->arena, "x", &ty_int);
+        return y;
+    }
+    if (!strcmp(name, "math_min")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = "math_min";
+        y->kind = SYM_FUNC;
+        y->type = &ty_int;
+        y->cname = "tz_math_min";
+        Param *p1 = param_new(s->arena, "a", &ty_int);
+        Param *p2 = param_new(s->arena, "b", &ty_int);
+        p1->next = p2;
+        y->params = p1;
+        return y;
+    }
+    if (!strcmp(name, "math_max")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = "math_max";
+        y->kind = SYM_FUNC;
+        y->type = &ty_int;
+        y->cname = "tz_math_max";
+        Param *p1 = param_new(s->arena, "a", &ty_int);
+        Param *p2 = param_new(s->arena, "b", &ty_int);
+        p1->next = p2;
+        y->params = p1;
+        return y;
+    }
     return NULL;
 }
 
@@ -192,6 +284,10 @@ static bool compatible(Sema *s, TypeInfo *dst, TypeInfo *src) {
         }
         return compatible(s, dst->elem_type, src->elem_type);
     }
+    if (dst->kind == TY_STRING && src->kind == TY_POINTER && src->elem_type->kind == TY_VOID)
+        return true;
+    if (src->kind == TY_STRING && dst->kind == TY_POINTER && dst->elem_type->kind == TY_VOID)
+        return true;
     if (dst->kind == TY_POINTER && is_integral(src)) return true; /* NULL / 0 */
     if (dst->kind == TY_ARRAY || src->kind == TY_ARRAY) {
         if (dst->kind != src->kind) return false;
@@ -478,6 +574,32 @@ static TypeInfo *expr(Sema *s, Node *n) {
             return n->type = tt;
         }
 
+        case NK_NULL_COALESCE: {
+            TypeInfo *lt = expr(s, n->binary.left);
+            TypeInfo *rt = expr(s, n->binary.right);
+            if (!compatible(s, lt, rt) && !compatible(s, rt, lt))
+                report_error(s->filename, n->line, n->col,
+                             "mismatched types in null-coalescing '?\\?': %s vs %s",
+                             type_str(s, lt), type_str(s, rt));
+            return n->type = (lt->kind == TY_POINTER && lt->elem_type->kind == TY_VOID) ? rt : lt;
+        }
+
+        case NK_RANGE: {
+            TypeInfo *st = expr(s, n->range.start);
+            TypeInfo *et = expr(s, n->range.end);
+            if (!is_integral(st) || !is_integral(et))
+                report_error(s->filename, n->line, n->col,
+                             "range bounds must be integers");
+            return n->type = &ty_int;
+        }
+
+        case NK_STRING_INTERP: {
+            for (NodeList *pt = n->string_interp.parts; pt; pt = pt->next) {
+                expr(s, pt->node);
+            }
+            return n->type = &ty_string;
+        }
+
         case NK_BINARY: {
             Node *L = n->binary.left, *R = n->binary.right;
             TypeInfo *lt = expr(s, L), *rt = expr(s, R);
@@ -665,6 +787,12 @@ static TypeInfo *expr(Sema *s, Node *n) {
                 return n->type = &ty_unknown;
             }
             if (ot->kind == TY_POINTER) ot = ot->elem_type;
+            if (ot->kind == TY_ARRAY) {
+                if (!strcmp(n->method_call.method, "length") || !strcmp(n->method_call.method, "alavu")) {
+                    for (NodeList *a = n->method_call.args; a; a = a->next) expr(s, a->node);
+                    return n->type = &ty_int;
+                }
+            }
             if (ot->kind == TY_STRING) {
                 if (!strcmp(n->method_call.method, "length") || !strcmp(n->method_call.method, "alavu")) {
                     for (NodeList *a = n->method_call.args; a; a = a->next) expr(s, a->node);
@@ -1166,7 +1294,9 @@ static void stmt(Sema *s, Node *n) {
         case NK_FOREACH: {
             TypeInfo *arr_type = expr(s, n->foreach_stmt.array);
             TypeInfo *elem_type = &ty_unknown;
-            if (arr_type->kind == TY_ARRAY || arr_type->kind == TY_POINTER) {
+            if (n->foreach_stmt.array->kind == NK_RANGE) {
+                elem_type = &ty_int;
+            } else if (arr_type->kind == TY_ARRAY || arr_type->kind == TY_POINTER) {
                 elem_type = arr_type->elem_type;
             } else if (arr_type->kind == TY_STRING) {
                 elem_type = &ty_char;

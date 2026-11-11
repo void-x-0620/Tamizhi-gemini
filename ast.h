@@ -60,6 +60,7 @@ typedef enum {
     NK_ASSIGN, NK_COMPOUND_ASSIGN,
     NK_POST_INC, NK_POST_DEC,
     NK_BINARY, NK_UNARY, NK_TERNARY,
+    NK_NULL_COALESCE, NK_RANGE, NK_STRING_INTERP,
     NK_CALL, NK_METHOD_CALL, NK_INDEX, NK_MEMBER, NK_ARROW,
     NK_ARRAY_INIT,
     NK_SIZEOF, NK_CAST,
@@ -145,6 +146,8 @@ struct Node {
         struct { BinOp op; Node *left; Node *right; } binary;
         struct { UnaryOp op; Node *operand; } unary;
         struct { Node *cond; Node *then_expr; Node *else_expr; } ternary;
+        struct { Node *start; Node *end; bool inclusive; } range;
+        struct { NodeList *parts; } string_interp;
         struct { TypeInfo *target_type; Node *expr; } sizeof_expr;
         struct { TypeInfo *target_type; Node *expr; } cast_expr;
         struct { const char *name; NodeList *args;

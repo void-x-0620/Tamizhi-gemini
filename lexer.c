@@ -322,6 +322,12 @@ Token lexer_next(Lexer *L) {
     char c = advance_ch(L);
 
     if (isdigit((unsigned char)c)) return lex_number(L, start, line, col);
+    if (c == 'f' && peek_ch(L) == '"') {
+        advance_ch(L);
+        Token t = lex_string(L, start, line, col);
+        t.type = TOK_FSTRING_LIT;
+        return t;
+    }
     if (c == '"')                  return lex_string(L, start, line, col);
     if (c == '\'')                 return lex_char(L, start, line, col);
 
@@ -341,9 +347,19 @@ Token lexer_next(Lexer *L) {
         case '{': TOK(TOK_LBRACE);    case '}': TOK(TOK_RBRACE);
         case '[': TOK(TOK_LBRACKET);  case ']': TOK(TOK_RBRACKET);
         case ';': TOK(TOK_SEMICOLON); case ',': TOK(TOK_COMMA);
-        case '.': TOK(TOK_DOT);       case ':': TOK(TOK_COLON);
+        case '.':
+            if (peek_ch(L) == '.') {
+                advance_ch(L);
+                if (peek_ch(L) == '=') { advance_ch(L); TOK(TOK_DOT_DOT_EQ); }
+                TOK(TOK_DOT_DOT);
+            }
+            TOK(TOK_DOT);
+        case ':': TOK(TOK_COLON);
         case '@': TOK(TOK_AT);
-        case '?': TOK(TOK_QUESTION);  case '~': TOK(TOK_TILDE);
+        case '?':
+            if (peek_ch(L) == '?') { advance_ch(L); TOK(TOK_QUESTION_QUESTION); }
+            TOK(TOK_QUESTION);
+        case '~': TOK(TOK_TILDE);
         case '+':
             if (peek_ch(L) == '+') { advance_ch(L); TOK(TOK_PLUS_PLUS); }
             if (peek_ch(L) == '=') { advance_ch(L); TOK(TOK_PLUS_EQ); }
@@ -418,6 +434,7 @@ const char *token_type_name(TokenType t) {
         case TOK_FLOAT_LIT:   return "float literal";
         case TOK_STRING_LIT:  return "string literal";
         case TOK_CHAR_LIT:    return "character literal";
+        case TOK_FSTRING_LIT: return "interpolated string literal";
         case TOK_IDENT:       return "identifier";
         case TOK_LPAREN:      return "'('";
         case TOK_RPAREN:      return "')'";
@@ -428,6 +445,8 @@ const char *token_type_name(TokenType t) {
         case TOK_SEMICOLON:   return "';'";
         case TOK_COMMA:       return "','";
         case TOK_DOT:         return "'.'";
+        case TOK_DOT_DOT:     return "'..'";
+        case TOK_DOT_DOT_EQ:  return "'..='";
         case TOK_COLON:       return "':'";
         case TOK_AT:          return "'@'";
         case TOK_CARET:       return "'^'";
@@ -453,6 +472,7 @@ const char *token_type_name(TokenType t) {
         case TOK_PIPE:        return "'|'";
         case TOK_TILDE:       return "'~'";
         case TOK_QUESTION:    return "'?'";
+        case TOK_QUESTION_QUESTION: return "'?\\?'";
         case TOK_SHL:         return "'<<'";
         case TOK_SHR:         return "'>>'";
         case TOK_PLUS_EQ:     return "'+='";
