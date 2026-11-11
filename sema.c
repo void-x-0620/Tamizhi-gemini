@@ -159,6 +159,173 @@ static Symbol *lookup(Sema *s, const char *name) {
         y->params = p1;
         return y;
     }
+    if (!strcmp(name, "math_floor")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = "math_floor";
+        y->kind = SYM_FUNC;
+        y->type = &ty_float;
+        y->cname = "tz_math_floor";
+        y->params = param_new(s->arena, "x", &ty_float);
+        return y;
+    }
+    if (!strcmp(name, "math_ceil")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = "math_ceil";
+        y->kind = SYM_FUNC;
+        y->type = &ty_float;
+        y->cname = "tz_math_ceil";
+        y->params = param_new(s->arena, "x", &ty_float);
+        return y;
+    }
+    if (!strcmp(name, "math_round")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = "math_round";
+        y->kind = SYM_FUNC;
+        y->type = &ty_float;
+        y->cname = "tz_math_round";
+        y->params = param_new(s->arena, "x", &ty_float);
+        return y;
+    }
+    if (!strcmp(name, "str_contains")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = "str_contains";
+        y->kind = SYM_FUNC;
+        y->type = &ty_bool;
+        y->cname = "tz_str_contains";
+        Param *p1 = param_new(s->arena, "s", &ty_string);
+        Param *p2 = param_new(s->arena, "sub", &ty_string);
+        p1->next = p2;
+        y->params = p1;
+        return y;
+    }
+    if (!strcmp(name, "str_upper")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = "str_upper";
+        y->kind = SYM_FUNC;
+        y->type = &ty_string;
+        y->cname = "tz_str_upper";
+        y->params = param_new(s->arena, "s", &ty_string);
+        return y;
+    }
+    if (!strcmp(name, "str_lower")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = "str_lower";
+        y->kind = SYM_FUNC;
+        y->type = &ty_string;
+        y->cname = "tz_str_lower";
+        y->params = param_new(s->arena, "s", &ty_string);
+        return y;
+    }
+    if (!strcmp(name, "str_trim")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = "str_trim";
+        y->kind = SYM_FUNC;
+        y->type = &ty_string;
+        y->cname = "tz_str_trim";
+        y->params = param_new(s->arena, "s", &ty_string);
+        return y;
+    }
+    if (!strcmp(name, "str_replace")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = "str_replace";
+        y->kind = SYM_FUNC;
+        y->type = &ty_string;
+        y->cname = "tz_str_replace";
+        Param *p1 = param_new(s->arena, "s", &ty_string);
+        Param *p2 = param_new(s->arena, "old_str", &ty_string);
+        Param *p3 = param_new(s->arena, "new_str", &ty_string);
+        p1->next = p2; p2->next = p3;
+        y->params = p1;
+        return y;
+    }
+    if (!strcmp(name, "str_to_int") || !strcmp(name, "en")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = name;
+        y->kind = SYM_FUNC;
+        y->type = &ty_int;
+        y->cname = "tz_str_to_int";
+        y->params = param_new(s->arena, "s", &ty_string);
+        return y;
+    }
+    if (!strcmp(name, "str_to_float") || !strcmp(name, "pulli_en")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = name;
+        y->kind = SYM_FUNC;
+        y->type = &ty_float;
+        y->cname = "tz_str_to_float";
+        y->params = param_new(s->arena, "s", &ty_string);
+        return y;
+    }
+    if (!strcmp(name, "int_to_str") || !strcmp(name, "ezhuthu")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = name;
+        y->kind = SYM_FUNC;
+        y->type = &ty_string;
+        y->cname = "tz_to_str_int";
+        y->params = param_new(s->arena, "v", &ty_int);
+        return y;
+    }
+    if (!strcmp(name, "float_to_str")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = "float_to_str";
+        y->kind = SYM_FUNC;
+        y->type = &ty_string;
+        y->cname = "tz_to_str_float";
+        y->params = param_new(s->arena, "v", &ty_float);
+        return y;
+    }
+    if (!strcmp(name, "char_to_str")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = "char_to_str";
+        y->kind = SYM_FUNC;
+        y->type = &ty_string;
+        y->cname = "tz_to_str_char";
+        y->params = param_new(s->arena, "v", &ty_char);
+        return y;
+    }
+    if (!strcmp(name, "sys_time") || !strcmp(name, "neram")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = name;
+        y->kind = SYM_FUNC;
+        y->type = &ty_int;
+        y->cname = "tz_sys_time";
+        y->params = NULL;
+        return y;
+    }
+    if (!strcmp(name, "sys_getenv") || !strcmp(name, "soozhal")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = name;
+        y->kind = SYM_FUNC;
+        y->type = &ty_string;
+        y->cname = "tz_sys_getenv";
+        y->params = param_new(s->arena, "name", &ty_string);
+        return y;
+    }
+    if (!strcmp(name, "sys_system") || !strcmp(name, "kattalai")) {
+        Symbol *y = arena_alloc(s->arena, sizeof(Symbol));
+        memset(y, 0, sizeof *y);
+        y->name = name;
+        y->kind = SYM_FUNC;
+        y->type = &ty_int;
+        y->cname = "tz_sys_system";
+        y->params = param_new(s->arena, "cmd", &ty_string);
+        return y;
+    }
     return NULL;
 }
 
@@ -522,6 +689,12 @@ static TypeInfo *expr(Sema *s, Node *n) {
                                  "cannot assign to const variable '%s'", sy->name);
                 }
             }
+            if (n->assign.target->kind == NK_INDEX &&
+                n->assign.target->index.array->type &&
+                n->assign.target->index.array->type->kind == TY_STRING) {
+                report_error(s->filename, n->line, n->col,
+                             "cannot modify character in immutable string");
+            }
             if (!is_unknown(lt) && lt->kind == TY_ARRAY)
                 report_error(s->filename, n->line, n->col,
                              "arrays cannot be assigned as a whole");
@@ -541,7 +714,13 @@ static TypeInfo *expr(Sema *s, Node *n) {
                     report_error(s->filename, n->line, n->col,
                                  "cannot assign to const variable '%s'", sy->name);
             }
-            if (!compatible(s, lt, rt))
+            if (lt->kind == TY_STRING) {
+                if (n->compound_assign.op != BOP_ADD || rt->kind != TY_STRING) {
+                    report_error(s->filename, n->line, n->col,
+                                 "operator '%s=' cannot be applied to string",
+                                 binop_name(n->compound_assign.op));
+                }
+            } else if (!compatible(s, lt, rt))
                 report_error(s->filename, n->line, n->col,
                              "incompatible types in compound assignment: %s and %s",
                              type_str(s, lt), type_str(s, rt));
@@ -806,6 +985,36 @@ static TypeInfo *expr(Sema *s, Node *n) {
                     for (NodeList *a = n->method_call.args; a; a = a->next) expr(s, a->node);
                     return n->type = &ty_int;
                 }
+                if (!strcmp(n->method_call.method, "contains") || !strcmp(n->method_call.method, "adangiullathu")) {
+                    for (NodeList *a = n->method_call.args; a; a = a->next) expr(s, a->node);
+                    return n->type = &ty_bool;
+                }
+                if (!strcmp(n->method_call.method, "starts_with") || !strcmp(n->method_call.method, "thodangugiradhu")) {
+                    for (NodeList *a = n->method_call.args; a; a = a->next) expr(s, a->node);
+                    return n->type = &ty_bool;
+                }
+                if (!strcmp(n->method_call.method, "ends_with") || !strcmp(n->method_call.method, "mudigiradhu")) {
+                    for (NodeList *a = n->method_call.args; a; a = a->next) expr(s, a->node);
+                    return n->type = &ty_bool;
+                }
+                if (!strcmp(n->method_call.method, "to_uppercase") || !strcmp(n->method_call.method, "periya_ezhuthu") ||
+                    !strcmp(n->method_call.method, "upper")) {
+                    for (NodeList *a = n->method_call.args; a; a = a->next) expr(s, a->node);
+                    return n->type = &ty_string;
+                }
+                if (!strcmp(n->method_call.method, "to_lowercase") || !strcmp(n->method_call.method, "siriya_ezhuthu") ||
+                    !strcmp(n->method_call.method, "lower")) {
+                    for (NodeList *a = n->method_call.args; a; a = a->next) expr(s, a->node);
+                    return n->type = &ty_string;
+                }
+                if (!strcmp(n->method_call.method, "trim") || !strcmp(n->method_call.method, "vetru")) {
+                    for (NodeList *a = n->method_call.args; a; a = a->next) expr(s, a->node);
+                    return n->type = &ty_string;
+                }
+                if (!strcmp(n->method_call.method, "replace") || !strcmp(n->method_call.method, "matru")) {
+                    for (NodeList *a = n->method_call.args; a; a = a->next) expr(s, a->node);
+                    return n->type = &ty_string;
+                }
             }
             if (ot->kind != TY_CLASS && ot->kind != TY_STRUCT) {
                 report_error(s->filename, n->line, n->col,
@@ -876,6 +1085,7 @@ static TypeInfo *expr(Sema *s, Node *n) {
                              "array index must be an integer, not %s",
                              type_str(s, it));
             if (is_unknown(at)) return n->type = &ty_unknown;
+            if (at->kind == TY_STRING) return n->type = &ty_char;
             if (at->kind == TY_POINTER) return n->type = at->elem_type;
             if (at->kind != TY_ARRAY) {
                 report_error(s->filename, n->line, n->col,

@@ -1,9 +1,9 @@
-# Tamizhi (v2.3.0)
+# Tamizhi (v2.4.0)
 
 A compiler for Tamizhi (a Tanglish and C-compatible language) written in C.
 It translates Tamizhi source directly to optimized C99 and compiles with the host C compiler (GCC/Clang), producing high-performance native binaries with zero interpretation overhead.
 
-Version 2.3.0 adds **Integer Range Expressions (`0..10`, `1..=5`)**, **Null-Coalescing Operator (`??`)**, **String Interpolation (`f"..."`)**, **Array `.length()` and `.alavu()` methods**, **Native File I/O Intrinsics (`file_read`, `file_write`, `file_exists`)**, **Math Intrinsics (`math_sqrt`, `math_pow`, `math_abs`, `math_min`, `math_max`)**, along with earlier **Enhanced Diagnostics**, **Scope-Exit Cleanup (`defer` / `pinbu`)**, **Range-Based Loops (`for ... in ...` / `padigal ... ul ...`)**, **Default Parameter Values**, **Built-in String Intrinsics & Methods (`str_len`, `s.length()`, `str_sub`, `str_find`)**, and **Tamizhi Header Files (`.tzh`)**.
+Version 2.4.0 adds **String Compound Assignment (`+=`)**, **String Character Indexing (`s[i]`)**, **Rich String Methods (`.contains()`, `.starts_with()`, `.ends_with()`, `.to_uppercase()`, `.to_lowercase()`, `.trim()`, `.replace()`)**, **Type Conversion & Parsing Intrinsics (`str_to_int`, `str_to_float`, `int_to_str`, etc.)**, **Extended Math Intrinsics (`math_floor`, `math_ceil`, `math_round`)**, **System & Environment Intrinsics (`sys_time`, `sys_getenv`, `sys_system`)**, and comprehensive **Bug & Robustness Fixes** (null-safe string comparisons, safe f-string brace escaping `\{` / `{{`).
 
 ---
 
@@ -536,14 +536,72 @@ if (file_exists(path)) {
 
 ---
 
+### 12. Advanced Language Features & Enhancements (v2.4.0)
+
+#### String Compound Concatenation (`+=`)
+Append directly to strings with automatic heap management:
+```tamizhi
+edu s: string = "Hello";
+s += " World";
+pathi("%s\n", s);   # "Hello World"
+```
+
+#### String Character Indexing (`s[i]`)
+Access any character by index (strings remain safely immutable):
+```tamizhi
+edu word: string = "Tamizhi";
+edu first_char: char = word[0];   # 'T'
+```
+
+#### Extended String Methods & Tanglish Aliases
+```tamizhi
+edu s: string = "  Hello Tamizhi World  ";
+
+# Search & Match:
+edu has_tamizhi: bool = s.contains("Tamizhi");        # or s.adangiullathu("Tamizhi")
+edu starts_h: bool = s.starts_with("  Hel");          # or s.thodangugiradhu(...)
+edu ends_w: bool = s.ends_with("World  ");            # or s.mudigiradhu(...)
+
+# Transformations:
+edu clean: string = s.trim();                         # or s.vetru() -> "Hello Tamizhi World"
+edu loud: string = clean.to_uppercase();              # or clean.periya_ezhuthu()
+edu quiet: string = clean.to_lowercase();             # or clean.siriya_ezhuthu()
+edu replaced: string = clean.replace("World", "Lang"); # or clean.matru(...)
+```
+
+#### Type Conversion & Parsing Intrinsics
+```tamizhi
+edu n1: int = str_to_int("42");           # or en("42")
+edu f1: float = str_to_float("3.14");     # or pulli_en("3.14")
+edu s_int: string = int_to_str(100);      # or ezhuthu(100)
+edu s_flt: string = float_to_str(2.718);
+edu s_chr: string = char_to_str('Z');
+```
+
+#### Extended Math Intrinsics
+```tamizhi
+edu f: float = math_floor(3.9);    # 3.0
+edu c: float = math_ceil(3.1);     # 4.0
+edu r: float = math_round(3.5);    # 4.0
+```
+
+#### System & Environment Intrinsics
+```tamizhi
+edu now: int = sys_time();                  # or neram() -> Unix timestamp
+edu home_dir: string = sys_getenv("HOME");  # or soozhal("HOME")
+edu code: int = sys_system("echo 'Run!'");  # or kattalai("...")
+```
+
+---
+
 ## Testing
 
 ```sh
 make test
 ```
-Runs 54 test suites:
-- 23 program tests (`tests/01_hello.tz` to `tests/23_modern_features.tz`)
-- 20 compile-error diagnostic tests (`tests/errors/`)
+Runs 57 test suites:
+- 24 program tests (`tests/01_hello.tz` to `tests/24_v24_features.tz`)
+- 22 compile-error diagnostic tests (`tests/errors/`)
 - C FFI bindings tests (`tests/ext/`)
 - Heap and Boehm GC tests (`tests/heap/`)
 - C99 Optimizer and constant-folding checks (`tests/opt/`)

@@ -451,6 +451,17 @@ static void gen_expr(CodeGen *cg, Node *n) {
             break;
 
         case NK_COMPOUND_ASSIGN:
+            if (is_string_type(n->compound_assign.target) && n->compound_assign.op == BOP_ADD) {
+                cg->uses_heap = true;
+                emit(cg, "(");
+                gen_expr(cg, n->compound_assign.target);
+                emit(cg, " = tz_concat(");
+                gen_expr(cg, n->compound_assign.target);
+                emit(cg, ", ");
+                gen_expr(cg, n->compound_assign.value);
+                emit(cg, "))");
+                break;
+            }
             emit(cg, "(");
             gen_expr(cg, n->compound_assign.target);
             emitf(cg, " %s= ", binop_name(n->compound_assign.op));
@@ -490,7 +501,8 @@ static void gen_expr(CodeGen *cg, Node *n) {
                 break;
             }
             if (is_string_type(L) && is_string_type(R)) {
-                emit(cg, "(strcmp(");
+                cg->uses_heap = true;
+                emit(cg, "(tz_str_cmp(");
                 gen_expr(cg, L); emit(cg, ", "); gen_expr(cg, R);
                 emitf(cg, ") %s 0)", binop_name(n->binary.op));
                 break;
@@ -543,6 +555,7 @@ static void gen_expr(CodeGen *cg, Node *n) {
             } else {
                 if (n->call.cname) {
                     if (!strncmp(n->call.cname, "tz_str_", 7) ||
+                        !strncmp(n->call.cname, "tz_to_str_", 10) ||
                         !strncmp(n->call.cname, "tz_file_", 8)) cg->uses_heap = true;
                     emit(cg, n->call.cname);
                 } else {
@@ -593,6 +606,66 @@ static void gen_expr(CodeGen *cg, Node *n) {
                 }
                 if (!strcmp(n->method_call.method, "find")) {
                     emit(cg, "tz_str_find(");
+                    gen_expr(cg, n->method_call.object);
+                    for (NodeList *a = n->method_call.args; a; a = a->next) {
+                        emit(cg, ", ");
+                        gen_expr(cg, a->node);
+                    }
+                    emit(cg, ")");
+                    break;
+                }
+                if (!strcmp(n->method_call.method, "contains") || !strcmp(n->method_call.method, "adangiullathu")) {
+                    emit(cg, "tz_str_contains(");
+                    gen_expr(cg, n->method_call.object);
+                    for (NodeList *a = n->method_call.args; a; a = a->next) {
+                        emit(cg, ", ");
+                        gen_expr(cg, a->node);
+                    }
+                    emit(cg, ")");
+                    break;
+                }
+                if (!strcmp(n->method_call.method, "starts_with") || !strcmp(n->method_call.method, "thodangugiradhu")) {
+                    emit(cg, "tz_str_starts_with(");
+                    gen_expr(cg, n->method_call.object);
+                    for (NodeList *a = n->method_call.args; a; a = a->next) {
+                        emit(cg, ", ");
+                        gen_expr(cg, a->node);
+                    }
+                    emit(cg, ")");
+                    break;
+                }
+                if (!strcmp(n->method_call.method, "ends_with") || !strcmp(n->method_call.method, "mudigiradhu")) {
+                    emit(cg, "tz_str_ends_with(");
+                    gen_expr(cg, n->method_call.object);
+                    for (NodeList *a = n->method_call.args; a; a = a->next) {
+                        emit(cg, ", ");
+                        gen_expr(cg, a->node);
+                    }
+                    emit(cg, ")");
+                    break;
+                }
+                if (!strcmp(n->method_call.method, "to_uppercase") || !strcmp(n->method_call.method, "periya_ezhuthu") ||
+                    !strcmp(n->method_call.method, "upper")) {
+                    emit(cg, "tz_str_upper(");
+                    gen_expr(cg, n->method_call.object);
+                    emit(cg, ")");
+                    break;
+                }
+                if (!strcmp(n->method_call.method, "to_lowercase") || !strcmp(n->method_call.method, "siriya_ezhuthu") ||
+                    !strcmp(n->method_call.method, "lower")) {
+                    emit(cg, "tz_str_lower(");
+                    gen_expr(cg, n->method_call.object);
+                    emit(cg, ")");
+                    break;
+                }
+                if (!strcmp(n->method_call.method, "trim") || !strcmp(n->method_call.method, "vetru")) {
+                    emit(cg, "tz_str_trim(");
+                    gen_expr(cg, n->method_call.object);
+                    emit(cg, ")");
+                    break;
+                }
+                if (!strcmp(n->method_call.method, "replace") || !strcmp(n->method_call.method, "matru")) {
+                    emit(cg, "tz_str_replace(");
                     gen_expr(cg, n->method_call.object);
                     for (NodeList *a = n->method_call.args; a; a = a->next) {
                         emit(cg, ", ");
@@ -721,6 +794,16 @@ static void gen_expr_stmt(CodeGen *cg, Node *e) {
         emit(cg, " = ");
         gen_expr(cg, e->assign.value);
     } else if (e->kind == NK_COMPOUND_ASSIGN) {
+        if (is_string_type(e->compound_assign.target) && e->compound_assign.op == BOP_ADD) {
+            cg->uses_heap = true;
+            gen_expr(cg, e->compound_assign.target);
+            emit(cg, " = tz_concat(");
+            gen_expr(cg, e->compound_assign.target);
+            emit(cg, ", ");
+            gen_expr(cg, e->compound_assign.value);
+            emit(cg, ")");
+            return;
+        }
         gen_expr(cg, e->compound_assign.target);
         emitf(cg, " %s= ", binop_name(e->compound_assign.op));
         gen_expr(cg, e->compound_assign.value);
@@ -1297,6 +1380,12 @@ static const char RT_COMMON[] =
     "static int tz_str_len(const char *s) {\n"
     "    return s ? (int)strlen(s) : 0;\n"
     "}\n"
+    "static int tz_str_cmp(const char *a, const char *b) {\n"
+    "    if (a == b) return 0;\n"
+    "    if (!a) return -1;\n"
+    "    if (!b) return 1;\n"
+    "    return strcmp(a, b);\n"
+    "}\n"
     "static const char *tz_str_sub(const char *s, int start, int len) {\n"
     "    if (!s) return \"\";\n"
     "    int slen = (int)strlen(s);\n"
@@ -1313,7 +1402,82 @@ static const char RT_COMMON[] =
     "    const char *p = strstr(haystack, needle);\n"
     "    return p ? (int)(p - haystack) : -1;\n"
     "}\n"
+    "static bool tz_str_contains(const char *s, const char *sub) {\n"
+    "    if (!s || !sub) return false;\n"
+    "    return strstr(s, sub) != NULL;\n"
+    "}\n"
+    "static bool tz_str_starts_with(const char *s, const char *prefix) {\n"
+    "    if (!s || !prefix) return false;\n"
+    "    size_t slen = strlen(s), plen = strlen(prefix);\n"
+    "    if (plen > slen) return false;\n"
+    "    return strncmp(s, prefix, plen) == 0;\n"
+    "}\n"
+    "static bool tz_str_ends_with(const char *s, const char *suffix) {\n"
+    "    if (!s || !suffix) return false;\n"
+    "    size_t slen = strlen(s), xlen = strlen(suffix);\n"
+    "    if (xlen > slen) return false;\n"
+    "    return strcmp(s + (slen - xlen), suffix) == 0;\n"
+    "}\n"
+    "static const char *tz_str_upper(const char *s) {\n"
+    "    if (!s) return \"\";\n"
+    "    size_t len = strlen(s);\n"
+    "    char *r = (char *)tz_alloc(len + 1);\n"
+    "    for (size_t i = 0; i < len; i++) r[i] = (char)toupper((unsigned char)s[i]);\n"
+    "    r[len] = '\\0';\n"
+    "    return r;\n"
+    "}\n"
+    "static const char *tz_str_lower(const char *s) {\n"
+    "    if (!s) return \"\";\n"
+    "    size_t len = strlen(s);\n"
+    "    char *r = (char *)tz_alloc(len + 1);\n"
+    "    for (size_t i = 0; i < len; i++) r[i] = (char)tolower((unsigned char)s[i]);\n"
+    "    r[len] = '\\0';\n"
+    "    return r;\n"
+    "}\n"
+    "static const char *tz_str_trim(const char *s) {\n"
+    "    if (!s) return \"\";\n"
+    "    while (*s && isspace((unsigned char)*s)) s++;\n"
+    "    if (!*s) return \"\";\n"
+    "    const char *end = s + strlen(s) - 1;\n"
+    "    while (end > s && isspace((unsigned char)*end)) end--;\n"
+    "    size_t len = (size_t)(end - s + 1);\n"
+    "    char *r = (char *)tz_alloc(len + 1);\n"
+    "    memcpy(r, s, len);\n"
+    "    r[len] = '\\0';\n"
+    "    return r;\n"
+    "}\n"
+    "static const char *tz_str_replace(const char *s, const char *old_str, const char *new_str) {\n"
+    "    if (!s || !old_str || !new_str || !*old_str) return s ? s : \"\";\n"
+    "    size_t old_len = strlen(old_str), new_len = strlen(new_str);\n"
+    "    int count = 0;\n"
+    "    const char *p = s;\n"
+    "    while ((p = strstr(p, old_str)) != NULL) { count++; p += old_len; }\n"
+    "    if (count == 0) return s;\n"
+    "    size_t new_total = strlen(s) + (size_t)count * (new_len > old_len ? (new_len - old_len) : 0);\n"
+    "    char *r = (char *)tz_alloc(new_total + 1);\n"
+    "    char *dst = r;\n"
+    "    p = s;\n"
+    "    while (*p) {\n"
+    "        if (strncmp(p, old_str, old_len) == 0) {\n"
+    "            memcpy(dst, new_str, new_len);\n"
+    "            dst += new_len;\n"
+    "            p += old_len;\n"
+    "        } else {\n"
+    "            *dst++ = *p++;\n"
+    "        }\n"
+    "    }\n"
+    "    *dst = '\\0';\n"
+    "    return r;\n"
+    "}\n"
+    "static long long tz_str_to_int(const char *s) {\n"
+    "    return s ? atoll(s) : 0;\n"
+    "}\n"
+    "static double tz_str_to_float(const char *s) {\n"
+    "    return s ? atof(s) : 0.0;\n"
+    "}\n"
     "static const char *tz_concat(const char *a, const char *b) {\n"
+    "    if (!a) a = \"null\";\n"
+    "    if (!b) b = \"null\";\n"
     "    size_t la = strlen(a), lb = strlen(b);\n"
     "    char *r = (char *)tz_alloc(la + lb + 1);\n"
     "    memcpy(r, a, la);\n"
@@ -1435,16 +1599,31 @@ void codegen_generate(CodeGen *cg, Node *prog) {
     cg->program = prog;
     emit(cg, "/* Generated by Tamizhi " TAMIZHI_VERSION " */\n"
              "#include <stdio.h>\n"
+             "#include <stdlib.h>\n"
              "#include <string.h>\n"
              "#include <stdint.h>\n"
              "#include <stddef.h>\n"
              "#include <stdbool.h>\n"
+             "#include <time.h>\n"
+             "#include <ctype.h>\n"
              "#include <math.h>\n\n"
              "static inline double tz_math_sqrt(double x) { return sqrt(x); }\n"
              "static inline double tz_math_pow(double x, double y) { return pow(x, y); }\n"
+             "static inline double tz_math_floor(double x) { return floor(x); }\n"
+             "static inline double tz_math_ceil(double x) { return ceil(x); }\n"
+             "static inline double tz_math_round(double x) { return round(x); }\n"
              "static inline long long tz_math_abs(long long x) { return x < 0 ? -x : x; }\n"
              "static inline long long tz_math_min(long long a, long long b) { return a < b ? a : b; }\n"
              "static inline long long tz_math_max(long long a, long long b) { return a > b ? a : b; }\n"
+             "static inline long long tz_sys_time(void) { return (long long)time(NULL); }\n"
+             "static inline const char *tz_sys_getenv(const char *name) {\n"
+             "    if (!name) return \"\";\n"
+             "    const char *v = getenv(name);\n"
+             "    return v ? v : \"\";\n"
+             "}\n"
+             "static inline int tz_sys_system(const char *cmd) {\n"
+             "    return cmd ? system(cmd) : 0;\n"
+             "}\n"
              "static inline bool tz_file_exists(const char *path) {\n"
              "    if (!path) return false;\n"
              "    FILE *f = fopen(path, \"rb\");\n"

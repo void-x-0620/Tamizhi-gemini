@@ -1,0 +1,5 @@
+seyal main(): int {
+    edu s: string = "hello";
+    s -= "x";
+    kudu 0;
+}

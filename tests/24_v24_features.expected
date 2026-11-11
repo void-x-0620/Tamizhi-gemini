@@ -1,0 +1,18 @@
+s: Hello World
+ch: H
+contains World: 1
+adangiullathu: 0
+starts_with: 1
+ends_with: 1
+upper: HELLO WORLD
+lower: hello world
+trimmed: 'trimmed text'
+replaced: Hello Tamizhi
+nums: 12345 6789
+f1: 314
+converted: 999 T
+floor: 3, ceil: 4, round: 4
+time valid: 1
+env valid: 1
+system ret: 1
+fstring: brace: { test } and sub-quote: 2

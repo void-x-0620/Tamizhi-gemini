@@ -136,7 +136,7 @@ static Token make_token(Lexer *L, TokenType type, const char *start,
 
 /* String literal. Pass 1 finds the closing quote so the unescaped result can
  * be allocated at its exact maximum size; pass 2 decodes the escapes. */
-static Token lex_string(Lexer *L, const char *start, int line, int col) {
+static Token lex_string(Lexer *L, const char *start, int line, int col, bool is_fstring) {
     const char *p = L->current;
     while (*p && *p != '"') {
         if (*p == '\\' && p[1]) p++;
@@ -148,7 +148,7 @@ static Token lex_string(Lexer *L, const char *start, int line, int col) {
         return make_token(L, TOK_ERROR, start, line, col);
     }
 
-    char *buf = arena_alloc(L->arena, (size_t)(p - L->current) + 1);
+    char *buf = arena_alloc(L->arena, (size_t)(p - L->current) + 2);
     size_t n = 0;
     while (peek_ch(L) != '"') {
         int ecol = L->col;
@@ -161,6 +161,14 @@ static Token lex_string(Lexer *L, const char *start, int line, int col) {
                 case 'r':  c = '\r'; break;
                 case '\\': c = '\\'; break;
                 case '"':  c = '"';  break;
+                case '{':
+                    if (is_fstring) { buf[n++] = '\\'; c = '{'; }
+                    else { c = '{'; }
+                    break;
+                case '}':
+                    if (is_fstring) { buf[n++] = '\\'; c = '}'; }
+                    else { c = '}'; }
+                    break;
                 default:
                     report_error(L->filename, L->line, ecol,
                                  "unknown escape sequence '\\%c'", e);
@@ -173,7 +181,7 @@ static Token lex_string(Lexer *L, const char *start, int line, int col) {
     advance_ch(L);                                   /* closing quote */
     buf[n] = '\0';
 
-    Token t = make_token(L, TOK_STRING_LIT, start, line, col);
+    Token t = make_token(L, is_fstring ? TOK_FSTRING_LIT : TOK_STRING_LIT, start, line, col);
     t.val.str_val = buf;
     return t;
 }
@@ -324,11 +332,9 @@ Token lexer_next(Lexer *L) {
     if (isdigit((unsigned char)c)) return lex_number(L, start, line, col);
     if (c == 'f' && peek_ch(L) == '"') {
         advance_ch(L);
-        Token t = lex_string(L, start, line, col);
-        t.type = TOK_FSTRING_LIT;
-        return t;
+        return lex_string(L, start, line, col, true);
     }
-    if (c == '"')                  return lex_string(L, start, line, col);
+    if (c == '"')                  return lex_string(L, start, line, col, false);
     if (c == '\'')                 return lex_char(L, start, line, col);
 
     if (isalpha((unsigned char)c) || c == '_') {

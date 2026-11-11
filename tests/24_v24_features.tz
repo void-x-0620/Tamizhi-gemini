@@ -1,0 +1,75 @@
+# tests/24_v24_features.tz — v2.4.0 features: string +=, indexing, string methods, conversions, math floor/ceil, system intrinsics
+
+seyal test_string_ops() {
+    # 1. Compound concatenation +=
+    edu s: string = "Hello";
+    s += " World";
+    pathi("s: %s\n", s);
+
+    # 2. String indexing s[i]
+    edu ch: char = s[0];
+    pathi("ch: %c\n", ch);
+
+    # 3. String methods
+    pathi("contains World: %d\n", s.contains("World") ? 1 : 0);
+    pathi("adangiullathu: %d\n", s.adangiullathu("xyz") ? 1 : 0);
+    pathi("starts_with: %d\n", s.starts_with("Hel") ? 1 : 0);
+    pathi("ends_with: %d\n", s.ends_with("rld") ? 1 : 0);
+
+    edu up: string = s.to_uppercase();
+    edu low: string = s.to_lowercase();
+    pathi("upper: %s\n", up);
+    pathi("lower: %s\n", low);
+
+    edu padded: string = "   trimmed text   ";
+    pathi("trimmed: '%s'\n", padded.trim());
+
+    edu rep: string = s.replace("World", "Tamizhi");
+    pathi("replaced: %s\n", rep);
+}
+
+seyal test_conversions() {
+    edu num1: int = str_to_int("12345");
+    edu num2: int = en("6789");
+    pathi("nums: %d %d\n", num1, num2);
+
+    edu f1: float = str_to_float("3.14");
+    pathi("f1: %d\n", (int)(f1 * 100.0));
+
+    edu s_int: string = int_to_str(999);
+    edu s_char: string = char_to_str('T');
+    pathi("converted: %s %s\n", s_int, s_char);
+}
+
+seyal test_math_ext() {
+    edu f: float = math_floor(3.8);
+    edu c: float = math_ceil(3.2);
+    edu r: float = math_round(3.6);
+    pathi("floor: %d, ceil: %d, round: %d\n", (int)f, (int)c, (int)r);
+}
+
+seyal test_system() {
+    edu t: int = sys_time();
+    pathi("time valid: %d\n", t > 0 ? 1 : 0);
+
+    edu path_env: string = sys_getenv("PATH");
+    pathi("env valid: %d\n", path_env.length() > 0 ? 1 : 0);
+
+    edu ret: int = sys_system("true");
+    pathi("system ret: %d\n", ret == 0 ? 1 : 0);
+}
+
+seyal test_fstring_escapes() {
+    edu s = "hello";
+    edu res: string = f"brace: \{ test \} and sub-quote: {s.find(\"l\")}";
+    pathi("fstring: %s\n", res);
+}
+
+seyal main(): int {
+    test_string_ops();
+    test_conversions();
+    test_math_ext();
+    test_system();
+    test_fstring_escapes();
+    kudu 0;
+}

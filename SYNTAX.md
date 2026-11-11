@@ -306,18 +306,29 @@ Embed variables and arbitrary expressions directly inside string literals using 
 ```tamizhi
 edu user: string = "Tamizhi";
 edu major = 2;
-edu minor = 3;
+edu minor = 4;
 
 # Interpolate variables:
 edu header = f"Running {user} v{major}.{minor}!";
 
 # Interpolate expressions and calculations:
 edu math_text = f"Result of 10 + 20 is {10 + 20}, sqrt(100) = {math_sqrt(100.0)}";
+
+# Escaped braces (\{, \}, {{, }}):
+edu brace_sample = f"Literal \{ brace \} and {{double}}";
 ```
 
-### String Concatenation (`+`)
+### String Concatenation & Compound Assignment (`+`, `+=`)
 ```tamizhi
-edu full_name = "Hello, " + "World!";
+edu s = "Hello, " + "World!";
+s += " Welcome to Tamizhi!";
+```
+
+### String Character Indexing (`s[i]`)
+Access characters in strings via standard 0-based indexing (strings are immutable):
+```tamizhi
+edu s = "Tamizhi";
+edu first: char = s[0];   # 'T'
 ```
 
 ### String Intrinsics & Method Calls
@@ -326,16 +337,27 @@ Strings support both intrinsic functions and object method calls:
 edu s: string = "hello world";
 
 # Length:
-edu l1 = s.length();        # 11
-edu l2 = s.alavu();         # 11
-edu l3 = str_len(s);        # 11
+edu l1 = s.length();                     # 11
+edu l2 = s.alavu();                      # 11
+edu l3 = str_len(s);                     # 11
 
 # Substring (start, length):
-edu sub1 = s.sub(6, 5);      # "world"
-edu sub2 = str_sub(s, 0, 5); # "hello"
+edu sub1 = s.sub(6, 5);                   # "world"
+edu sub2 = str_sub(s, 0, 5);              # "hello"
 
-# Substring Search:
-edu idx = s.find("world");  # 6 (returns -1 if not found)
+# Substring Search & Containment:
+edu idx = s.find("world");               # 6 (returns -1 if not found)
+edu has = s.contains("world");           # or s.adangiullathu(...) -> true
+edu start = s.starts_with("hel");        # or s.thodangugiradhu(...) -> true
+edu end = s.ends_with("rld");            # or s.mudigiradhu(...) -> true
+
+# Case Conversion:
+edu upper = s.to_uppercase();            # or s.periya_ezhuthu() -> "HELLO WORLD"
+edu lower = s.to_lowercase();            # or s.siriya_ezhuthu() -> "hello world"
+
+# Trimming & Replacement:
+edu clean = "  spaced  ".trim();         # or .vetru() -> "spaced"
+edu rep = s.replace("world", "tamizhi"); # or s.matru(...) -> "hello tamizhi"
 ```
 
 ---
@@ -566,6 +588,9 @@ Native, fast inline mathematical routines:
 |---|---|---|
 | `math_sqrt(x)` | `(float): float` | Square root |
 | `math_pow(x, y)` | `(float, float): float` | Base $x$ raised to power $y$ |
+| `math_floor(x)` | `(float): float` | Floor (largest integer $\le x$) |
+| `math_ceil(x)` | `(float): float` | Ceiling (smallest integer $\ge x$) |
+| `math_round(x)` | `(float): float` | Rounds $x$ to nearest integer |
 | `math_abs(x)` | `(int): int` | Absolute integer value |
 | `math_min(a, b)` | `(int, int): int` | Minimum of two integers |
 | `math_max(a, b)` | `(int, int): int` | Maximum of two integers |
@@ -573,8 +598,39 @@ Native, fast inline mathematical routines:
 ```tamizhi
 edu s = math_sqrt(25.0);       # 5.0
 edu p = math_pow(2.0, 4.0);    # 16.0
+edu fl = math_floor(3.9);      # 3.0
+edu ce = math_ceil(3.1);       # 4.0
+edu ro = math_round(3.5);      # 4.0
 edu a = math_abs(-42);         # 42
 edu m = math_max(10, 20);      # 20
+```
+
+### Type Conversion & Parsing Intrinsics
+| Function | Tanglish Alias | Signature | Description |
+|---|---|---|---|
+| `str_to_int(s)` | `en(s)` | `(string): int` | Parses string as signed 64-bit integer |
+| `str_to_float(s)` | `pulli_en(s)` | `(string): float` | Parses string as 64-bit float |
+| `int_to_str(n)` | `ezhuthu(n)` | `(int): string` | Converts integer to string |
+| `float_to_str(f)` | — | `(float): string` | Converts float to string |
+| `char_to_str(c)` | — | `(char): string` | Converts character to 1-character string |
+
+```tamizhi
+edu i: int = str_to_int("1234");       # or en("1234")
+edu f: float = str_to_float("3.1415"); # or pulli_en("3.1415")
+edu s_int: string = int_to_str(42);    # or ezhuthu(42)
+```
+
+### System & Environment Intrinsics
+| Function | Tanglish Alias | Signature | Description |
+|---|---|---|---|
+| `sys_time()` | `neram()` | `(): int` | Returns current UNIX timestamp in seconds |
+| `sys_getenv(name)` | `soozhal(name)` | `(string): string` | Retrieves environment variable value |
+| `sys_system(cmd)` | `kattalai(cmd)` | `(string): int` | Executes host shell command and returns exit code |
+
+```tamizhi
+edu timestamp = sys_time();                   # or neram()
+edu user = sys_getenv("USER");                # or soozhal("USER")
+edu exit_status = sys_system("echo 'Done'");  # or kattalai("echo 'Done'")
 ```
 
 ### File I/O Intrinsics
@@ -587,7 +643,7 @@ Native disk operations with zero external library overhead:
 
 ```tamizhi
 edu file_name: string = "config.txt";
-edu saved: bool = file_write(file_name, "version=2.3.0\nactive=true\n");
+edu saved: bool = file_write(file_name, "version=2.4.0\nactive=true\n");
 
 if (file_exists(file_name)) {
     edu content: string = file_read(file_name);
@@ -667,3 +723,4 @@ seyal main(): int {
 # Check compiler version:
 ./tamizhi --version
 ```
+

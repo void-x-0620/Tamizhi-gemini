@@ -1356,11 +1356,47 @@ static Node *parse_fstring(Parser *p, Token tok) {
     NodeListBuilder b = {0};
     const char *s = tok.val.str_val;
     while (*s) {
-        if (*s == '{') {
+        if (*s == '\\' && (s[1] == '{' || s[1] == '}')) {
+            s++;
+            char *lit = arena_alloc(p->arena, 2);
+            lit[0] = *s++;
+            lit[1] = '\0';
+            Node *lit_node = node_new(p->arena, NK_STRING_LIT, tok.line, tok.col);
+            lit_node->string_lit.value = lit;
+            nlb_push(p->arena, &b, lit_node);
+        } else if (*s == '{' && s[1] == '{') {
+            s += 2;
+            Node *lit_node = node_new(p->arena, NK_STRING_LIT, tok.line, tok.col);
+            lit_node->string_lit.value = "{";
+            nlb_push(p->arena, &b, lit_node);
+        } else if (*s == '}' && s[1] == '}') {
+            s += 2;
+            Node *lit_node = node_new(p->arena, NK_STRING_LIT, tok.line, tok.col);
+            lit_node->string_lit.value = "}";
+            nlb_push(p->arena, &b, lit_node);
+        } else if (*s == '{') {
             s++;
             const char *expr_start = s;
             int depth = 1;
             while (*s && depth > 0) {
+                if (*s == '"') {
+                    s++;
+                    while (*s && *s != '"') {
+                        if (*s == '\\' && s[1]) s++;
+                        s++;
+                    }
+                    if (*s == '"') s++;
+                    continue;
+                }
+                if (*s == '\'') {
+                    s++;
+                    while (*s && *s != '\'') {
+                        if (*s == '\\' && s[1]) s++;
+                        s++;
+                    }
+                    if (*s == '\'') s++;
+                    continue;
+                }
                 if (*s == '{') depth++;
                 else if (*s == '}') depth--;
                 if (depth > 0) s++;
@@ -1383,7 +1419,9 @@ static Node *parse_fstring(Parser *p, Token tok) {
             nlb_push(p->arena, &b, expr_node);
         } else {
             const char *lit_start = s;
-            while (*s && *s != '{') s++;
+            while (*s && *s != '{' && !(*s == '\\' && (s[1] == '{' || s[1] == '}')) &&
+                   !(*s == '}' && s[1] == '}'))
+                s++;
             size_t lit_len = (size_t)(s - lit_start);
             char *lit_str = arena_strndup(p->arena, lit_start, lit_len);
             Node *lit_node = node_new(p->arena, NK_STRING_LIT, tok.line, tok.col);
