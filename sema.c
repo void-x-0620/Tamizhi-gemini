@@ -358,6 +358,9 @@ static bool is_integral(TypeInfo *t) {
         case TY_UCHAR: case TY_USHORT: case TY_UINT: case TY_ULONG:
         case TY_UINT8: case TY_UINT16: case TY_UINT32: case TY_UINT64:
         case TY_SIZE_T: case TY_SSIZE_T: case TY_INTPTR: case TY_UINTPTR: case TY_PTRDIFF:
+        case TY_C_INT: case TY_C_LONG: case TY_C_LONGLONG: case TY_C_SHORT:
+        case TY_C_CHAR: case TY_C_UCHAR: case TY_C_USHORT: case TY_C_UINT: case TY_C_ULONG:
+        case TY_C_BOOL:
         case TY_ENUM: case TY_UNKNOWN:
             return true;
         default:
@@ -370,6 +373,7 @@ static bool is_numeric(TypeInfo *t) {
     if (is_integral(t)) return true;
     switch (t->kind) {
         case TY_FLOAT: case TY_DOUBLE: case TY_LONG_DOUBLE:
+        case TY_C_FLOAT: case TY_C_DOUBLE:
             return true;
         default:
             return false;
@@ -404,6 +408,18 @@ static const char *type_str(Sema *s, TypeInfo *t) {
         case TY_INTPTR:      return "intptr_t";
         case TY_UINTPTR:     return "uintptr_t";
         case TY_PTRDIFF:     return "ptrdiff_t";
+        case TY_C_INT:       return "cint";
+        case TY_C_FLOAT:     return "cfloat";
+        case TY_C_DOUBLE:    return "cdouble";
+        case TY_C_LONG:      return "clong";
+        case TY_C_LONGLONG:  return "clonglong";
+        case TY_C_SHORT:     return "cshort";
+        case TY_C_CHAR:      return "cchar";
+        case TY_C_UCHAR:     return "cuchar";
+        case TY_C_USHORT:    return "cushort";
+        case TY_C_UINT:      return "cuint";
+        case TY_C_ULONG:     return "culong";
+        case TY_C_BOOL:      return "cbool";
         case TY_STRING:      return "string";
         case TY_BOOL:        return "bool";
         case TY_STRUCT:
@@ -559,9 +575,9 @@ static void check_pathi(Sema *s, Node *n) {
         bool ok = true;
         switch (kinds[i]) {
             case 'i': case 'c': ok = is_integral(t);                 break;
-            case 'f': ok = is_unknown(t) || t->kind == TY_FLOAT || t->kind == TY_DOUBLE || t->kind == TY_LONG_DOUBLE;            break;
+            case 'f': ok = is_unknown(t) || t->kind == TY_FLOAT || t->kind == TY_DOUBLE || t->kind == TY_LONG_DOUBLE || t->kind == TY_C_FLOAT || t->kind == TY_C_DOUBLE; break;
             case 's': ok = is_unknown(t) || t->kind == TY_STRING ||
-                           (t->kind == TY_POINTER && t->elem_type->kind == TY_CHAR); break;
+                           (t->kind == TY_POINTER && (t->elem_type->kind == TY_CHAR || t->elem_type->kind == TY_C_CHAR)); break;
         }
         if (!ok)
             report_error(s->filename, a->node->line, a->node->col,
@@ -833,8 +849,8 @@ static TypeInfo *expr(Sema *s, Node *n) {
                 report_error(s->filename, R->line, R->col,
                              "division by zero");
             if (cmp || op == BOP_AND || op == BOP_OR) return n->type = &ty_bool;
-            if ((!is_unknown(lt) && (lt->kind == TY_FLOAT || lt->kind == TY_DOUBLE)) ||
-                (!is_unknown(rt) && (rt->kind == TY_FLOAT || rt->kind == TY_DOUBLE)))
+            if ((!is_unknown(lt) && (lt->kind == TY_FLOAT || lt->kind == TY_DOUBLE || lt->kind == TY_C_FLOAT || lt->kind == TY_C_DOUBLE)) ||
+                (!is_unknown(rt) && (rt->kind == TY_FLOAT || rt->kind == TY_DOUBLE || rt->kind == TY_C_FLOAT || rt->kind == TY_C_DOUBLE)))
                 return n->type = &ty_float;
             if (is_unknown(lt) || is_unknown(rt)) return n->type = &ty_unknown;
             return n->type = &ty_int;

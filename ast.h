@@ -19,6 +19,10 @@ typedef enum {
     TY_UINT8, TY_UINT16, TY_UINT32, TY_UINT64,
     TY_SIZE_T, TY_SSIZE_T, TY_INTPTR, TY_UINTPTR, TY_PTRDIFF,
     TY_DOUBLE, TY_LONG_DOUBLE,
+    /* Explicit C-prefixed types (cint, cfloat, cdouble, etc.) */
+    TY_C_INT, TY_C_FLOAT, TY_C_DOUBLE, TY_C_LONG, TY_C_LONGLONG,
+    TY_C_SHORT, TY_C_CHAR, TY_C_UCHAR, TY_C_USHORT, TY_C_UINT, TY_C_ULONG,
+    TY_C_BOOL,
     /* Compound & pointer types */
     TY_ARRAY, TY_POINTER,
     TY_STRUCT, TY_CLASS, TY_UNION, TY_ENUM,
@@ -42,6 +46,9 @@ extern TypeInfo ty_int8, ty_int16, ty_int32, ty_int64;
 extern TypeInfo ty_uchar, ty_ushort, ty_uint, ty_ulong;
 extern TypeInfo ty_uint8, ty_uint16, ty_uint32, ty_uint64;
 extern TypeInfo ty_size_t, ty_ssize_t, ty_intptr, ty_uintptr, ty_ptrdiff;
+extern TypeInfo ty_c_int, ty_c_float, ty_c_double, ty_c_long, ty_c_longlong;
+extern TypeInfo ty_c_short, ty_c_char, ty_c_uchar, ty_c_ushort, ty_c_uint, ty_c_ulong;
+extern TypeInfo ty_c_bool;
 
 /* ─── Node kinds ───────────────────────────────────────────────────────── */
 typedef enum {
@@ -113,12 +120,16 @@ struct Node {
                  Node *body; bool is_static; } func_decl;
         struct { const char *name; TypeInfo *var_type; Node *init;
                  bool is_const; bool is_static; } var_decl;
-        struct { const char *name; Field *fields; NodeList *methods; } struct_decl;
+        struct { const char *name; Field *fields; NodeList *methods;
+                 bool is_extern; bool has_header; } struct_decl;
         struct { const char *name; const char *base_name; Field *fields;
                  NodeList *methods; } class_decl;
-        struct { const char *name; EnumVal *values; } enum_decl;
-        struct { const char *name; Field *fields; } union_decl;
-        struct { const char *name; TypeInfo *type; } typedef_decl;
+        struct { const char *name; EnumVal *values;
+                 bool is_extern; bool has_header; } enum_decl;
+        struct { const char *name; Field *fields;
+                 bool is_extern; bool has_header; } union_decl;
+        struct { const char *name; TypeInfo *type;
+                 bool is_extern; bool has_header; } typedef_decl;
         struct { NodeList *stmts; } block;
         struct { IfBranch *branches; } if_stmt;
         struct { Node *cond; Node *body; } while_stmt;

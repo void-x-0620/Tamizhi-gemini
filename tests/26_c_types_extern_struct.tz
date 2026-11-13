@@ -1,0 +1,105 @@
+serku "bind/custom_types.tzb";
+
+# Opaque struct forward declaration
+veli struct OpaqueHandle;
+
+# In-file extern struct with C-style fields
+veli struct NativeVec3 {
+    cfloat x;
+    cfloat y;
+    cfloat z;
+};
+
+# Tamizhi struct with C-style fields and C-types
+kattamaipu ColorRGB {
+    cuchar r;
+    cuchar g;
+    cuchar b;
+};
+
+# Struct with Tamizhi style fields using C-types
+kattamaipu CData {
+    id   : cint;
+    rate : cdouble;
+    flag : cbool;
+    len  : csize;
+};
+
+# Enum with trailing comma
+veli enum Priority {
+    LOW = 10,
+    MEDIUM = 20,
+    HIGH = 30,
+};
+
+seyal test_c_types() : void {
+    edu ci  : cint = 123;
+    edu cf  : cfloat = 3.5f;
+    edu cd1 : cdouble = 2.718;
+    edu cd2 : cdouple = 1.414;
+    edu cl  : clong = 999999;
+    edu cs  : cshort = 42;
+    edu cc  : cchar = 65;
+    edu cu  : cuint = 500u;
+    edu cb  : cbool = true;
+    edu csz : csize_t = 100;
+
+    pathi("ci=%d, cf=%.1f, cd1=%.3f, cd2=%.3f\n", ci, cf, cd1, cd2);
+    pathi("cl=%d, cs=%d, cc=%c, cu=%d, cb=%d, csz=%d\n", cl, cs, cc, cu, cb, csz);
+}
+
+seyal test_pointer_math(p : cint*) : void {
+    *p = *p + 10;
+}
+
+seyal main() : int {
+    pathi("--- C Types ---\n");
+    test_c_types();
+
+    edu num : cint = 50;
+    test_pointer_math(&num);
+    pathi("pointer updated num: %d\n", num);
+
+    pathi("--- Imported CPoint from .tzb ---\n");
+    edu pt : CPoint;
+    pt.x = 10;
+    pt.y = 20;
+    pathi("CPoint: x=%d, y=%d\n", pt.x, pt.y);
+
+    pathi("--- Imported Status enum ---\n");
+    edu s : Status = STATUS_OK;
+    pathi("Status OK=%d, ERROR=%d\n", s, STATUS_ERROR);
+
+    pathi("--- NativeVec3 (veli struct) ---\n");
+    edu v : NativeVec3;
+    v.x = 1.0f;
+    v.y = 2.5f;
+    v.z = 4.0f;
+    pathi("Vec3: (%.1f, %.1f, %.1f)\n", v.x, v.y, v.z);
+
+    pathi("--- ColorRGB (cuchar fields) ---\n");
+    edu col : ColorRGB;
+    col.r = 255;
+    col.g = 128;
+    col.b = 0;
+    pathi("RGB: (%d, %d, %d)\n", col.r, col.g, col.b);
+
+    pathi("--- CData (mixed c-types) ---\n");
+    edu cd : CData;
+    cd.id = 1;
+    cd.rate = 9.81;
+    cd.flag = true;
+    cd.len = 64;
+    pathi("CData: id=%d, rate=%.2f, flag=%d, len=%d\n", cd.id, cd.rate, cd.flag, cd.len);
+
+    pathi("--- Priority Enum ---\n");
+    pathi("Priority LOW=%d, MEDIUM=%d, HIGH=%d\n", Priority.LOW, Priority.MEDIUM, Priority.HIGH);
+
+    # Opaque pointer test
+    edu handle : OpaqueHandle* = maru;
+    @(handle == maru) aga irundha {
+        pathi("OpaqueHandle pointer is null\n");
+    }
+
+    kudu 0;
+}

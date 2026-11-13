@@ -1,0 +1,11 @@
+# Custom types exported via .tzb binding
+veli struct CPoint {
+    cint x;
+    cint y;
+};
+
+veli enum Status {
+    STATUS_OK = 0,
+    STATUS_ERROR = 1,
+    STATUS_PENDING = 2,
+};

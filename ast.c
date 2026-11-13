@@ -37,6 +37,19 @@ TypeInfo ty_intptr      = { TY_INTPTR,      NULL, NULL, -1, false, false };
 TypeInfo ty_uintptr     = { TY_UINTPTR,     NULL, NULL, -1, false, false };
 TypeInfo ty_ptrdiff     = { TY_PTRDIFF,     NULL, NULL, -1, false, false };
 
+TypeInfo ty_c_int       = { TY_C_INT,       NULL, NULL, -1, false, false };
+TypeInfo ty_c_float     = { TY_C_FLOAT,     NULL, NULL, -1, false, false };
+TypeInfo ty_c_double    = { TY_C_DOUBLE,    NULL, NULL, -1, false, false };
+TypeInfo ty_c_long      = { TY_C_LONG,      NULL, NULL, -1, false, false };
+TypeInfo ty_c_longlong  = { TY_C_LONGLONG,  NULL, NULL, -1, false, false };
+TypeInfo ty_c_short     = { TY_C_SHORT,     NULL, NULL, -1, false, false };
+TypeInfo ty_c_char      = { TY_C_CHAR,      NULL, NULL, -1, false, false };
+TypeInfo ty_c_uchar     = { TY_C_UCHAR,     NULL, NULL, -1, false, false };
+TypeInfo ty_c_ushort    = { TY_C_USHORT,    NULL, NULL, -1, false, false };
+TypeInfo ty_c_uint      = { TY_C_UINT,      NULL, NULL, -1, false, false };
+TypeInfo ty_c_ulong     = { TY_C_ULONG,     NULL, NULL, -1, false, false };
+TypeInfo ty_c_bool      = { TY_C_BOOL,      NULL, NULL, -1, false, false };
+
 Node *node_new(Arena *a, NodeKind kind, int line, int col) {
     Node *n = arena_alloc(a, sizeof(Node));
     memset(n, 0, sizeof(Node));

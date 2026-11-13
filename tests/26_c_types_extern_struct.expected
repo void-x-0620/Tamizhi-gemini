@@ -1,0 +1,17 @@
+--- C Types ---
+ci=123, cf=3.5, cd1=2.718, cd2=1.414
+cl=999999, cs=42, cc=A, cu=500, cb=1, csz=100
+pointer updated num: 60
+--- Imported CPoint from .tzb ---
+CPoint: x=10, y=20
+--- Imported Status enum ---
+Status OK=0, ERROR=1
+--- NativeVec3 (veli struct) ---
+Vec3: (1.0, 2.5, 4.0)
+--- ColorRGB (cuchar fields) ---
+RGB: (255, 128, 0)
+--- CData (mixed c-types) ---
+CData: id=1, rate=9.81, flag=1, len=64
+--- Priority Enum ---
+Priority LOW=10, MEDIUM=20, HIGH=30
+OpaqueHandle pointer is null

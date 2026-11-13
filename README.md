@@ -85,10 +85,11 @@ Tamizhi supports dual Tanglish and English / C keywords:
 ### 2. Supported Types
 
 - **Primitives**: `int` (64-bit), `float` (64-bit double), `double`, `char`, `short`, `long`, `void`, `bool`, `string`
+- **C-Equivalent Types (`c` prefix)**: `cint` (32-bit int), `cfloat` (32-bit float), `cdouble` / `cdouple` (64-bit double), `clong`, `clonglong`, `cshort`, `cchar`, `cuchar`, `cushort`, `cuint`, `culong`, `cbool`, `cvoid`, `csize_t` / `csize`
 - **Unsigned types**: `unsigned char` (`uchar`), `unsigned short` (`ushort`), `unsigned int` (`uint`), `unsigned long` (`ulong`)
 - **Exact-width types**: `int8` (`int8_t`), `int16` (`int16_t`), `int32` (`int32_t`), `int64` (`int64_t`), `uint8` (`uint8_t`), `uint16` (`uint16_t`), `uint32` (`uint32_t`), `uint64` (`uint64_t`)
 - **System types**: `size_t`, `ssize_t`, `intptr_t`, `uintptr_t`, `ptrdiff_t`
-- **Pointers**: `T*`, `T**` (e.g. `int*`, `char*`, `void*`, `Vector2*`)
+- **Pointers**: `T*`, `T**` (e.g. `int*`, `cint*`, `cfloat*`, `char*`, `void*`, `Vector2*`)
 - **Arrays**: Fixed-size `T[N]` and unsized `T[]`
 - **User types**: Structs (`kattamaipu` / `struct`), Classes (`vaguppu` / `class`), Enums (`enumaripu` / `enum`), Unions (`ondrippu` / `union`), and `typedef` aliases.
 
@@ -709,13 +710,65 @@ make install-user      # installs to ~/.local/bin and ~/.local/share/include/tam
 
 ---
 
+### 17. C FFI, C-Equivalent Types & Custom Type Imports
+
+Tamizhi provides native interoperability with C libraries and header declarations:
+
+#### C-Equivalent Types (`c` prefix)
+Tamizhi standard integers (`int`) and floats (`float`) are 64-bit. For direct C FFI compatibility:
+- `cint` -> 32-bit signed C `int`
+- `cfloat` -> 32-bit single-precision IEEE-754 `float` (supports `1.5f` suffix)
+- `cdouble`, `cdouple` -> 64-bit double-precision C `double`
+- `clong`, `clonglong` -> C `long`, `long long`
+- `cshort`, `cchar`, `cuchar`, `cushort`, `cuint`, `culong`, `cbool`, `cvoid`, `csize_t` / `csize`
+- Literal suffixes like `f`, `u`, `l`, `ll` are supported on numbers (e.g. `3.5f`, `100u`, `0xFFULL`).
+
+#### Importing Custom Types (`veli` / `extern`)
+Declare external structs, enums, unions, and typedefs directly or inside `.tzb` binding files:
+```tamizhi
+# Forward / Opaque struct declaration:
+veli struct OpaqueHandle;
+
+# Extern struct with C-style fields:
+veli struct NativeVec3 {
+    cfloat x;
+    cfloat y;
+    cfloat z;
+};
+
+# Extern enum with optional trailing comma:
+veli enum Status {
+    STATUS_OK = 0,
+    STATUS_ERROR = 1,
+};
+```
+
+#### Dual Field Syntax in Structs and Unions
+Both standard C style (`type name;`) and Tamizhi style (`name : type;`) are supported inside `struct` (`kattamaipu`) and `union` (`ondrippu`):
+```tamizhi
+kattamaipu PointA {
+    cint x;
+    cint y;
+};
+
+kattamaipu PointB {
+    x : cint;
+    y : cint;
+};
+```
+
+#### Header Deduplication
+When external C headers are included via `veli "header.h";`, Tamizhi's semantic analyzer uses the declared fields for type checking while the code generator suppresses duplicate C struct/enum definitions, eliminating redefinition collisions with `#include`.
+
+---
+
 ## Testing
 
 ```sh
 make test
 ```
-Runs 58 test suites:
-- 25 program tests (`tests/01_hello.tz` to `tests/25_stdlib.tz`)
+Runs 59 test suites:
+- 26 program tests (`tests/01_hello.tz` to `tests/26_c_types_extern_struct.tz`)
 - 22 compile-error diagnostic tests (`tests/errors/`)
 - C FFI bindings tests (`tests/ext/`)
 - Heap and Boehm GC tests (`tests/heap/`)

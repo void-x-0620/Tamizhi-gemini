@@ -241,6 +241,10 @@ static Token lex_number(Lexer *L, const char *start, int line, int col) {
             if (digits == 0) {
                 report_error(L->filename, line, col, "expected hexadecimal digits after '0x'");
             }
+            while (peek_ch(L) == 'u' || peek_ch(L) == 'U' ||
+                   peek_ch(L) == 'l' || peek_ch(L) == 'L') {
+                advance_ch(L);
+            }
             Token t = make_token(L, TOK_INT_LIT, start, line, col);
             t.val.int_val = strtoll(start, NULL, 16);
             return t;
@@ -256,6 +260,10 @@ static Token lex_number(Lexer *L, const char *start, int line, int col) {
             if (digits == 0) {
                 report_error(L->filename, line, col, "expected binary digits after '0b'");
             }
+            while (peek_ch(L) == 'u' || peek_ch(L) == 'U' ||
+                   peek_ch(L) == 'l' || peek_ch(L) == 'L') {
+                advance_ch(L);
+            }
             Token t = make_token(L, TOK_INT_LIT, start, line, col);
             t.val.int_val = val;
             return t;
@@ -269,6 +277,10 @@ static Token lex_number(Lexer *L, const char *start, int line, int col) {
             }
             if (digits == 0) {
                 report_error(L->filename, line, col, "expected octal digits after '0o'");
+            }
+            while (peek_ch(L) == 'u' || peek_ch(L) == 'U' ||
+                   peek_ch(L) == 'l' || peek_ch(L) == 'L') {
+                advance_ch(L);
             }
             Token t = make_token(L, TOK_INT_LIT, start, line, col);
             t.val.int_val = strtoll(start + 2, NULL, 8);
@@ -288,6 +300,21 @@ static Token lex_number(Lexer *L, const char *start, int line, int col) {
         advance_ch(L);
         if (peek_ch(L) == '+' || peek_ch(L) == '-') advance_ch(L);
         while (isdigit((unsigned char)peek_ch(L))) advance_ch(L);
+    }
+    if (is_float) {
+        if (peek_ch(L) == 'f' || peek_ch(L) == 'F') {
+            advance_ch(L);
+        }
+    } else {
+        if (peek_ch(L) == 'f' || peek_ch(L) == 'F') {
+            is_float = true;
+            advance_ch(L);
+        } else {
+            while (peek_ch(L) == 'u' || peek_ch(L) == 'U' ||
+                   peek_ch(L) == 'l' || peek_ch(L) == 'L') {
+                advance_ch(L);
+            }
+        }
     }
     Token t = make_token(L, is_float ? TOK_FLOAT_LIT : TOK_INT_LIT,
                          start, line, col);

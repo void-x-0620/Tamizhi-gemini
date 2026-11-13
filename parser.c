@@ -395,6 +395,42 @@ static Node *parse_extern(Parser *p) {
         return n;
     }
 
+    if (check(p, TOK_KATTAMAIPU)) {
+        Node *n = parse_struct_decl(p);
+        if (n) {
+            n->struct_decl.is_extern = true;
+            n->struct_decl.has_header = p->saw_header;
+        }
+        return n;
+    }
+
+    if (check(p, TOK_ENUM)) {
+        Node *n = parse_enum_decl(p);
+        if (n) {
+            n->enum_decl.is_extern = true;
+            n->enum_decl.has_header = p->saw_header;
+        }
+        return n;
+    }
+
+    if (check(p, TOK_UNION)) {
+        Node *n = parse_union_decl(p);
+        if (n) {
+            n->union_decl.is_extern = true;
+            n->union_decl.has_header = p->saw_header;
+        }
+        return n;
+    }
+
+    if (check(p, TOK_TYPEDEF)) {
+        Node *n = parse_typedef(p);
+        if (n) {
+            n->typedef_decl.is_extern = true;
+            n->typedef_decl.has_header = p->saw_header;
+        }
+        return n;
+    }
+
     expect(p, TOK_SEYAL);
     Token name  = expect(p, TOK_IDENT);
     Token cname = name;
@@ -517,9 +553,25 @@ static Node *parse_class_decl(Parser *p) {
     return n;
 }
 
+static bool is_field_name_colon(Parser *p) {
+    if (!check(p, TOK_IDENT)) return false;
+    Lexer saved = *p->lexer;
+    lexer_next(p->lexer);
+    Token next = lexer_peek(p->lexer);
+    *p->lexer = saved;
+    return next.type == TOK_COLON;
+}
+
 static Node *parse_struct_decl(Parser *p) {
     Token kw   = expect(p, TOK_KATTAMAIPU);
     Token name = expect(p, TOK_IDENT);
+    if (match(p, TOK_SEMICOLON)) {
+        Node *n = node_new(p->arena, NK_STRUCT_DECL, kw.line, kw.col);
+        n->struct_decl.name    = lexeme(p, name);
+        n->struct_decl.fields  = NULL;
+        n->struct_decl.methods = NULL;
+        return n;
+    }
     expect(p, TOK_LBRACE);
 
     Field *head = NULL, *tail = NULL;
@@ -531,10 +583,17 @@ static Node *parse_struct_decl(Parser *p) {
             Node *m = parse_func_decl(p, false);
             m->func_decl.class_name = sname;
             nlb_push(p->arena, &mb, m);
-        } else {
+        } else if (is_field_name_colon(p)) {
             Token fn = expect(p, TOK_IDENT);
             expect(p, TOK_COLON);
             TypeInfo *ft = parse_type(p);
+            expect(p, TOK_SEMICOLON);
+            Field *f = field_new(p->arena, lexeme(p, fn), ft);
+            if (tail) tail->next = f; else head = f;
+            tail = f;
+        } else {
+            TypeInfo *ft = parse_type(p);
+            Token fn = expect(p, TOK_IDENT);
             expect(p, TOK_SEMICOLON);
             Field *f = field_new(p->arena, lexeme(p, fn), ft);
             if (tail) tail->next = f; else head = f;
@@ -581,6 +640,7 @@ static Node *parse_enum_decl(Parser *p) {
         tail = ev;
         cur_val++;
         if (!match(p, TOK_COMMA)) break;
+        if (check(p, TOK_RBRACE)) break;
     }
     expect(p, TOK_RBRACE);
     match(p, TOK_SEMICOLON);
@@ -594,17 +654,32 @@ static Node *parse_enum_decl(Parser *p) {
 static Node *parse_union_decl(Parser *p) {
     Token kw   = expect(p, TOK_UNION);
     Token name = expect(p, TOK_IDENT);
+    if (match(p, TOK_SEMICOLON)) {
+        Node *n = node_new(p->arena, NK_UNION_DECL, kw.line, kw.col);
+        n->union_decl.name   = lexeme(p, name);
+        n->union_decl.fields = NULL;
+        return n;
+    }
     expect(p, TOK_LBRACE);
 
     Field *head = NULL, *tail = NULL;
     while (!check(p, TOK_RBRACE) && !check(p, TOK_EOF) && !p->panic) {
-        Token fn = expect(p, TOK_IDENT);
-        expect(p, TOK_COLON);
-        TypeInfo *ft = parse_type(p);
-        expect(p, TOK_SEMICOLON);
-        Field *f = field_new(p->arena, lexeme(p, fn), ft);
-        if (tail) tail->next = f; else head = f;
-        tail = f;
+        if (is_field_name_colon(p)) {
+            Token fn = expect(p, TOK_IDENT);
+            expect(p, TOK_COLON);
+            TypeInfo *ft = parse_type(p);
+            expect(p, TOK_SEMICOLON);
+            Field *f = field_new(p->arena, lexeme(p, fn), ft);
+            if (tail) tail->next = f; else head = f;
+            tail = f;
+        } else {
+            TypeInfo *ft = parse_type(p);
+            Token fn = expect(p, TOK_IDENT);
+            expect(p, TOK_SEMICOLON);
+            Field *f = field_new(p->arena, lexeme(p, fn), ft);
+            if (tail) tail->next = f; else head = f;
+            tail = f;
+        }
     }
     expect(p, TOK_RBRACE);
     match(p, TOK_SEMICOLON);
@@ -688,6 +763,35 @@ static bool is_type_ahead(Parser *p) {
     if (len == 5 && !memcmp(s, "ulong", 5)) return true;
     if (len >= 4 && (!memcmp(s, "int8", 4) || !memcmp(s, "uint", 4) ||
                      !memcmp(s, "size_t", 6) || !memcmp(s, "intptr", 6))) return true;
+    if (s[0] == 'c') {
+        const char *cs = s + 1;
+        int clen = len - 1;
+        if (clen == 3 && !memcmp(cs, "int", 3)) return true;
+        if (clen == 5 && !memcmp(cs, "float", 5)) return true;
+        if (clen == 6 && !memcmp(cs, "double", 6)) return true;
+        if (clen == 6 && !memcmp(cs, "douple", 6)) return true;
+        if (clen == 4 && !memcmp(cs, "char", 4)) return true;
+        if (clen == 5 && !memcmp(cs, "short", 5)) return true;
+        if (clen == 4 && !memcmp(cs, "long", 4)) return true;
+        if (clen == 8 && !memcmp(cs, "longlong", 8)) return true;
+        if (clen == 10 && !memcmp(cs, "longdouble", 10)) return true;
+        if (clen == 4 && !memcmp(cs, "bool", 4)) return true;
+        if (clen == 4 && !memcmp(cs, "void", 4)) return true;
+        if (clen == 5 && !memcmp(cs, "uchar", 5)) return true;
+        if (clen == 6 && !memcmp(cs, "ushort", 6)) return true;
+        if (clen == 4 && !memcmp(cs, "uint", 4)) return true;
+        if (clen == 5 && !memcmp(cs, "ulong", 5)) return true;
+        if (clen == 4 && !memcmp(cs, "size", 4)) return true;
+        if (clen == 6 && !memcmp(cs, "size_t", 6)) return true;
+        if (clen == 5 && !memcmp(cs, "ssize", 5)) return true;
+        if (clen == 7 && !memcmp(cs, "ssize_t", 7)) return true;
+        if (clen == 6 && !memcmp(cs, "intptr", 6)) return true;
+        if (clen == 8 && !memcmp(cs, "intptr_t", 8)) return true;
+        if (clen == 7 && !memcmp(cs, "uintptr", 7)) return true;
+        if (clen == 9 && !memcmp(cs, "uintptr_t", 9)) return true;
+        if (clen == 7 && !memcmp(cs, "ptrdiff", 7)) return true;
+        if (clen == 9 && !memcmp(cs, "ptrdiff_t", 9)) return true;
+    }
     return false;
 }
 
@@ -780,6 +884,49 @@ static TypeInfo *parse_type(Parser *p) {
     else if (len == 8 && !memcmp(s, "intptr_t", 8))    base = &ty_intptr;
     else if (len == 9 && !memcmp(s, "uintptr_t", 9))   base = &ty_uintptr;
     else if (len == 9 && !memcmp(s, "ptrdiff_t", 9))   base = &ty_ptrdiff;
+    else if (s[0] == 'c') {
+        const char *cs = s + 1;
+        int clen = len - 1;
+        if (clen == 3 && !memcmp(cs, "int", 3))            base = &ty_c_int;
+        else if (clen == 5 && !memcmp(cs, "float", 5))     base = &ty_c_float;
+        else if (clen == 6 && !memcmp(cs, "double", 6))    base = &ty_c_double;
+        else if (clen == 6 && !memcmp(cs, "douple", 6))    base = &ty_c_double;
+        else if (clen == 4 && !memcmp(cs, "char", 4))      base = &ty_c_char;
+        else if (clen == 5 && !memcmp(cs, "short", 5))     base = &ty_c_short;
+        else if (clen == 4 && !memcmp(cs, "long", 4)) {
+            if (check(p, TOK_IDENT) && peek(p).length == 4 && !memcmp(peek(p).start, "long", 4)) {
+                advance(p);
+                base = &ty_c_longlong;
+            } else if (check(p, TOK_IDENT) && peek(p).length == 6 && !memcmp(peek(p).start, "double", 6)) {
+                advance(p);
+                base = &ty_long_double;
+            } else {
+                base = &ty_c_long;
+            }
+        }
+        else if (clen == 8 && !memcmp(cs, "longlong", 8))  base = &ty_c_longlong;
+        else if (clen == 10 && !memcmp(cs, "longdouble", 10)) base = &ty_long_double;
+        else if (clen == 4 && !memcmp(cs, "bool", 4))      base = &ty_c_bool;
+        else if (clen == 4 && !memcmp(cs, "void", 4))      base = &ty_void;
+        else if (clen == 5 && !memcmp(cs, "uchar", 5))     base = &ty_c_uchar;
+        else if (clen == 6 && !memcmp(cs, "ushort", 6))    base = &ty_c_ushort;
+        else if (clen == 4 && !memcmp(cs, "uint", 4))      base = &ty_c_uint;
+        else if (clen == 5 && !memcmp(cs, "ulong", 5))     base = &ty_c_ulong;
+        else if (clen == 4 && !memcmp(cs, "size", 4))      base = &ty_size_t;
+        else if (clen == 6 && !memcmp(cs, "size_t", 6))    base = &ty_size_t;
+        else if (clen == 5 && !memcmp(cs, "ssize", 5))     base = &ty_ssize_t;
+        else if (clen == 7 && !memcmp(cs, "ssize_t", 7))   base = &ty_ssize_t;
+        else if (clen == 6 && !memcmp(cs, "intptr", 6))    base = &ty_intptr;
+        else if (clen == 8 && !memcmp(cs, "intptr_t", 8))  base = &ty_intptr;
+        else if (clen == 7 && !memcmp(cs, "uintptr", 7))   base = &ty_uintptr;
+        else if (clen == 9 && !memcmp(cs, "uintptr_t", 9)) base = &ty_uintptr;
+        else if (clen == 7 && !memcmp(cs, "ptrdiff", 7))   base = &ty_ptrdiff;
+        else if (clen == 9 && !memcmp(cs, "ptrdiff_t", 9)) base = &ty_ptrdiff;
+        else {
+            base = type_new(p->arena, TY_STRUCT);
+            base->struct_name = lexeme(p, tok);
+        }
+    }
     else {
         base = type_new(p->arena, TY_STRUCT);
         base->struct_name = lexeme(p, tok);

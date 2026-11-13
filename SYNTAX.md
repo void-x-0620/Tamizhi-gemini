@@ -215,6 +215,28 @@ typedef Vector2* VectorPtr;
 edu distance: Metric = 150;
 ```
 
+### C-Equivalent Types (`c` prefix)
+Tamizhi defaults to 64-bit `int` and 64-bit `float`. For precise interoperability with native C libraries, FFI bindings, and memory-critical structures, Tamizhi provides exact C-equivalent types prefixed with `c`:
+
+| Tamizhi Type | C Equivalent | Width / Precision | Description |
+|---|---|---|---|
+| `cint` | `int` | 32-bit signed | Standard C `int` |
+| `cfloat` | `float` | 32-bit IEEE-754 | Single-precision float (supports `1.5f` suffix) |
+| `cdouble`, `cdouple` | `double` | 64-bit IEEE-754 | Standard C `double` |
+| `clong` | `long` | Platform word | Standard C `long` |
+| `clonglong` | `long long` | 64-bit signed | Standard C `long long` |
+| `cshort` | `short` | 16-bit signed | Standard C `short` |
+| `cchar` | `char` | 8-bit | Standard C `char` |
+| `cuchar` | `unsigned char` | 8-bit unsigned | Byte / pixel buffer value |
+| `cushort` | `unsigned short` | 16-bit unsigned | 16-bit unsigned integer |
+| `cuint` | `unsigned int` | 32-bit unsigned | 32-bit unsigned integer (supports `100u` suffix) |
+| `culong` | `unsigned long` | Platform word | Unsigned long |
+| `cbool` | `bool` | 1-byte bool | C99 `bool` (`stdbool.h`) |
+| `cvoid` | `void` | Unit | C `void` type |
+| `csize_t`, `csize` | `size_t` | Platform size | C `size_t` |
+
+Pointer variants (`cint*`, `cchar*`, `cfloat*`, `cvoid*`) and literals with standard suffixes (`1.0f`, `100u`, `0xFFULL`) are fully supported.
+
 ---
 
 ## 6. Functions & Methods
@@ -690,15 +712,65 @@ seyal main(): int {
 ### C Foreign Function Interface (`extern` / `veli`)
 Directly call external C runtime or system functions:
 ```tamizhi
-extern header "<time.h>";
-extern seyal time(t: void*): int;
+veli "time.h";
+veli seyal time(t: cvoid*): cint;
 
 seyal main(): int {
-    edu t = time(null);
+    edu t = time(maru);
     pathi("Unix timestamp: %d\n", t);
     kudu 0;
 }
 ```
+
+### Importing Custom Types (`struct`, `enum`, `union`, `typedef`)
+Tamizhi allows importing and defining custom C-compatible types in binding files (`.tzb`) or source files (`.tz`) using `veli` / `extern`:
+
+```tamizhi
+# 1. Forward / Opaque Struct Declaration:
+veli struct OpaqueHandle;
+edu handle: OpaqueHandle* = maru;
+
+# 2. Extern Struct with C-style fields:
+veli struct Vector2D {
+    cfloat x;
+    cfloat y;
+};
+
+# 3. Extern Enum with optional trailing comma:
+veli enum PixelFormat {
+    RGBA8888 = 1,
+    RGB565   = 2,
+    GRAYSCALE = 3,
+};
+
+# 4. Extern Union:
+veli union DataSlot {
+    cint i_val;
+    cfloat f_val;
+};
+
+# 5. Extern Typedef:
+veli typedef cint CustomID;
+```
+
+#### Dual Field Syntax in Structs and Unions
+Both standard C style (`type name;`) and Tamizhi style (`name : type;`) are supported inside `struct` (`kattamaipu`) and `union` (`ondrippu`):
+```tamizhi
+# C-style fields:
+kattamaipu PointA {
+    cint x;
+    cint y;
+};
+
+# Tamizhi-style fields:
+kattamaipu PointB {
+    x : cint;
+    y : cint;
+};
+```
+
+#### Header Deduplication
+When an external C header is imported via `veli "my_header.h";`, Tamizhi records the fields for frontend type checking and code completion, but suppresses redundant struct and enum definitions in the generated C output. This avoids C compiler redefinition collisions with `#include`.
 
 ---
 

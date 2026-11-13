@@ -334,6 +334,18 @@ static void gen_base_type(CodeGen *cg, TypeInfo *t) {
         case TY_INTPTR:      emit(cg, "intptr_t");           break;
         case TY_UINTPTR:     emit(cg, "uintptr_t");          break;
         case TY_PTRDIFF:     emit(cg, "ptrdiff_t");          break;
+        case TY_C_INT:       emit(cg, "int");                break;
+        case TY_C_FLOAT:     emit(cg, "float");              break;
+        case TY_C_DOUBLE:    emit(cg, "double");             break;
+        case TY_C_LONG:      emit(cg, "long");               break;
+        case TY_C_LONGLONG:  emit(cg, "long long");          break;
+        case TY_C_SHORT:     emit(cg, "short");              break;
+        case TY_C_CHAR:      emit(cg, "char");               break;
+        case TY_C_UCHAR:     emit(cg, "unsigned char");      break;
+        case TY_C_USHORT:    emit(cg, "unsigned short");     break;
+        case TY_C_UINT:      emit(cg, "unsigned int");       break;
+        case TY_C_ULONG:     emit(cg, "unsigned long");      break;
+        case TY_C_BOOL:      emit(cg, "bool");               break;
         case TY_STRING:      emit(cg, "const char *");       break;
         case TY_BOOL:        emit(cg, "int");                break;
         case TY_VOID:        emit(cg, "void");               break;
@@ -372,7 +384,9 @@ static void gen_zero_init(CodeGen *cg, TypeInfo *t) {
     switch (t ? t->kind : TY_UNKNOWN) {
         case TY_FLOAT:
         case TY_DOUBLE:
-        case TY_LONG_DOUBLE: emit(cg, "0.0"); break;
+        case TY_LONG_DOUBLE:
+        case TY_C_FLOAT:
+        case TY_C_DOUBLE:    emit(cg, "0.0"); break;
         case TY_STRING:      emit(cg, "\"\""); break;
         case TY_POINTER:     emit(cg, "NULL"); break;
         case TY_ARRAY:
@@ -711,6 +725,10 @@ static void gen_expr(CodeGen *cg, Node *n) {
             break;
 
         case NK_MEMBER:
+            if (n->member.object->type && n->member.object->type->kind == TY_ENUM) {
+                emit_ident(cg, n->member.field);
+                break;
+            }
             gen_expr(cg, n->member.object);
             if (n->member.object->type && n->member.object->type->kind == TY_POINTER)
                 emit(cg, "->");
@@ -769,15 +787,16 @@ static void gen_to_string(CodeGen *cg, Node *n) {
     TypeInfo *t = n->type;
     if (t && t->kind == TY_STRING) {
         gen_expr(cg, n);
-    } else if (t && (t->kind == TY_FLOAT || t->kind == TY_DOUBLE)) {
+    } else if (t && (t->kind == TY_FLOAT || t->kind == TY_DOUBLE || t->kind == TY_LONG_DOUBLE ||
+                     t->kind == TY_C_FLOAT || t->kind == TY_C_DOUBLE)) {
         emit(cg, "tz_to_str_float(");
         gen_expr(cg, n);
         emit(cg, ")");
-    } else if (t && t->kind == TY_BOOL) {
+    } else if (t && (t->kind == TY_BOOL || t->kind == TY_C_BOOL)) {
         emit(cg, "tz_to_str_bool(");
         gen_expr(cg, n);
         emit(cg, ")");
-    } else if (t && t->kind == TY_CHAR) {
+    } else if (t && (t->kind == TY_CHAR || t->kind == TY_C_CHAR)) {
         emit(cg, "tz_to_str_char(");
         gen_expr(cg, n);
         emit(cg, ")");
@@ -862,9 +881,11 @@ static void gen_var_decl(CodeGen *cg, Node *n) {
         emit(cg, "}");
     } else if (init) {
         init = n->var_decl.init = simplify(cg, init);
-        if (vt && (vt->kind == TY_FLOAT || vt->kind == TY_DOUBLE) && init->type &&
-            init->type->kind != TY_FLOAT && init->type->kind != TY_DOUBLE) {
+        if (vt && (vt->kind == TY_FLOAT || vt->kind == TY_DOUBLE || vt->kind == TY_C_DOUBLE) && init->type &&
+            init->type->kind != TY_FLOAT && init->type->kind != TY_DOUBLE && init->type->kind != TY_C_DOUBLE) {
             emit(cg, "(double)");
+        } else if (vt && vt->kind == TY_C_FLOAT && init->type && init->type->kind != TY_C_FLOAT) {
+            emit(cg, "(float)");
         }
         gen_expr(cg, init);
     } else {
@@ -1208,6 +1229,7 @@ static void gen_func_header(CodeGen *cg, Node *f) {
 }
 
 static void gen_enum(CodeGen *cg, Node *n) {
+    if (n->enum_decl.is_extern && n->enum_decl.has_header) return;
     emit(cg, "typedef enum {\n");
     cg->indent++;
     for (EnumVal *v = n->enum_decl.values; v; v = v->next) {
@@ -1224,6 +1246,7 @@ static void gen_enum(CodeGen *cg, Node *n) {
 }
 
 static void gen_union(CodeGen *cg, Node *n) {
+    if (n->union_decl.is_extern && n->union_decl.has_header) return;
     emit(cg, "typedef union {\n");
     cg->indent++;
     for (Field *f = n->union_decl.fields; f; f = f->next) {
@@ -1238,6 +1261,7 @@ static void gen_union(CodeGen *cg, Node *n) {
 }
 
 static void gen_typedef(CodeGen *cg, Node *n) {
+    if (n->typedef_decl.is_extern && n->typedef_decl.has_header) return;
     emit(cg, "typedef ");
     gen_base_type(cg, n->typedef_decl.type);
     emit(cg, " ");
@@ -1246,7 +1270,18 @@ static void gen_typedef(CodeGen *cg, Node *n) {
 }
 
 static void gen_struct(CodeGen *cg, Node *n) {
-    emit(cg, "typedef struct {\n");
+    if (n->struct_decl.is_extern && n->struct_decl.has_header) return;
+    if (!n->struct_decl.fields) {
+        emit(cg, "typedef struct ");
+        emit_ident(cg, n->struct_decl.name);
+        emit(cg, " ");
+        emit_ident(cg, n->struct_decl.name);
+        emit(cg, ";\n\n");
+        return;
+    }
+    emit(cg, "typedef struct ");
+    emit_ident(cg, n->struct_decl.name);
+    emit(cg, " {\n");
     cg->indent++;
     for (Field *f = n->struct_decl.fields; f; f = f->next) {
         indent(cg);
@@ -1303,24 +1338,43 @@ static void gen_aggregates_ordered(CodeGen *cg, Node *prog) {
 
     /* First emit all enums and typedefs */
     for (NodeList *it = prog->program.decls; it; it = it->next) {
-        if (it->node->kind == NK_ENUM_DECL) gen_enum(cg, it->node);
-        else if (it->node->kind == NK_TYPEDEF) gen_typedef(cg, it->node);
-        else if (it->node->kind == NK_UNION_DECL) gen_union(cg, it->node);
+        if (it->node->kind == NK_ENUM_DECL) {
+            if (!it->node->enum_decl.is_extern || !it->node->enum_decl.has_header)
+                gen_enum(cg, it->node);
+        } else if (it->node->kind == NK_TYPEDEF) {
+            if (!it->node->typedef_decl.is_extern || !it->node->typedef_decl.has_header)
+                gen_typedef(cg, it->node);
+        } else if (it->node->kind == NK_UNION_DECL) {
+            if (!it->node->union_decl.is_extern || !it->node->union_decl.has_header)
+                gen_union(cg, it->node);
+        }
     }
 
     /* Collect structs and classes for dependency ordering */
     int count = 0;
-    for (NodeList *it = prog->program.decls; it; it = it->next)
-        if (it->node->kind == NK_STRUCT_DECL || it->node->kind == NK_CLASS_DECL) count++;
+    for (NodeList *it = prog->program.decls; it; it = it->next) {
+        if (it->node->kind == NK_STRUCT_DECL) {
+            if (it->node->struct_decl.is_extern && it->node->struct_decl.has_header)
+                continue;
+            count++;
+        } else if (it->node->kind == NK_CLASS_DECL) {
+            count++;
+        }
+    }
     if (!count) return;
 
     bool *done  = arena_alloc(cg->arena, (size_t)count * sizeof(bool));
     Node **decl = arena_alloc(cg->arena, (size_t)count * sizeof(Node *));
     int k = 0;
-    for (NodeList *it = prog->program.decls; it; it = it->next)
-        if (it->node->kind == NK_STRUCT_DECL || it->node->kind == NK_CLASS_DECL) {
+    for (NodeList *it = prog->program.decls; it; it = it->next) {
+        if (it->node->kind == NK_STRUCT_DECL) {
+            if (it->node->struct_decl.is_extern && it->node->struct_decl.has_header)
+                continue;
+            decl[k] = it->node; done[k++] = false;
+        } else if (it->node->kind == NK_CLASS_DECL) {
             decl[k] = it->node; done[k++] = false;
         }
+    }
 
     int emitted = 0;
     for (int pass = 0; pass < count && emitted < count; pass++) {
