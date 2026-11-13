@@ -3,3 +3,4 @@ seyal main(): int {
     s -= "x";
     kudu 0;
 }
+

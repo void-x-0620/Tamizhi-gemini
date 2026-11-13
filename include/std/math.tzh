@@ -1,0 +1,156 @@
+# Tamizhi Standard Library — Math Module
+# std/math.tzh: Constants, trigonometry, rounding, clamping, and interpolation.
+
+veli "math.h";
+veli seyal math_c_sin = sin(x : float) : float;
+veli seyal math_c_cos = cos(x : float) : float;
+veli seyal math_c_tan = tan(x : float) : float;
+veli seyal math_c_asin = asin(x : float) : float;
+veli seyal math_c_acos = acos(x : float) : float;
+veli seyal math_c_atan = atan(x : float) : float;
+veli seyal math_c_atan2 = atan2(y : float, x : float) : float;
+veli seyal math_c_log = log(x : float) : float;
+veli seyal math_c_exp = exp(x : float) : float;
+
+# Mathematical Constants
+const edu MATH_PI  : float = 3.14159265358979323846;
+const edu MATH_E   : float = 2.71828182845904523536;
+const edu MATH_TAU : float = 6.28318530717958647692;
+
+const edu PI : float = 3.14159265358979323846;
+const edu E  : float = 2.71828182845904523536;
+
+# Angle conversions
+seyal deg_to_rad(deg : float) : float {
+    kudu deg * (MATH_PI / 180.0);
+}
+
+seyal rad_to_deg(rad : float) : float {
+    kudu rad * (180.0 / MATH_PI);
+}
+
+# Clamping
+seyal clamp(val : float, min_val : float, max_val : float) : float {
+    if (val < min_val) { kudu min_val; }
+    if (val > max_val) { kudu max_val; }
+    kudu val;
+}
+
+seyal clamp_int(val : int, min_val : int, max_val : int) : int {
+    if (val < min_val) { kudu min_val; }
+    if (val > max_val) { kudu max_val; }
+    kudu val;
+}
+
+# Linear interpolation
+seyal lerp(a : float, b : float, t : float) : float {
+    kudu a + (b - a) * t;
+}
+
+# Hypotenuse: sqrt(x^2 + y^2)
+seyal hypot(x : float, y : float) : float {
+    kudu math_sqrt(x * x + y * y);
+}
+
+# Min and Max
+seyal min_f(a : float, b : float) : float {
+    kudu (a < b) ? a : b;
+}
+
+seyal max_f(a : float, b : float) : float {
+    kudu (a > b) ? a : b;
+}
+
+# Absolute values
+seyal abs_f(x : float) : float {
+    kudu (x < 0.0) ? -x : x;
+}
+
+seyal abs_int(x : int) : int {
+    kudu math_abs(x);
+}
+
+# Signum
+seyal sign_f(x : float) : int {
+    if (x > 0.0) { kudu 1; }
+    if (x < 0.0) { kudu -1; }
+    kudu 0;
+}
+
+seyal sign_int(x : int) : int {
+    if (x > 0) { kudu 1; }
+    if (x < 0) { kudu -1; }
+    kudu 0;
+}
+
+# Trigonometry
+seyal sin(x : float) : float {
+    kudu math_c_sin(x);
+}
+
+seyal cos(x : float) : float {
+    kudu math_c_cos(x);
+}
+
+seyal tan(x : float) : float {
+    kudu math_c_tan(x);
+}
+
+seyal asin(x : float) : float {
+    kudu math_c_asin(x);
+}
+
+seyal acos(x : float) : float {
+    kudu math_c_acos(x);
+}
+
+seyal atan(x : float) : float {
+    kudu math_c_atan(x);
+}
+
+seyal atan2(y : float, x : float) : float {
+    kudu math_c_atan2(y, x);
+}
+
+# Exponentials and Logarithms
+seyal ln(x : float) : float {
+    kudu math_c_log(x);
+}
+
+seyal exp(x : float) : float {
+    kudu math_c_exp(x);
+}
+
+seyal sqrt(x : float) : float {
+    kudu math_sqrt(x);
+}
+
+seyal pow(b : float, e : float) : float {
+    kudu math_pow(b, e);
+}
+
+# Rounding
+seyal floor(x : float) : float {
+    kudu math_floor(x);
+}
+
+seyal ceil(x : float) : float {
+    kudu math_ceil(x);
+}
+
+seyal round(x : float) : float {
+    kudu math_round(x);
+}
+
+# Tamil aliases
+seyal vargamulam(x : float) : float {
+    kudu math_sqrt(x);
+}
+
+seyal madippu(n : int) : int {
+    kudu math_abs(n);
+}
+
+seyal ellai(val : float, min_val : float, max_val : float) : float {
+    kudu clamp(val, min_val, max_val);
+}

@@ -1,4 +1,4 @@
-# Tamizhi Language Syntax & Reference Manual (v2.3.0)
+# Tamizhi Language Syntax & Reference Manual (v2.5.0)
 
 This document provides a comprehensive specification and reference for all syntax rules, constructs, keywords, and practical usages in the Tamizhi programming language.
 
@@ -723,4 +723,134 @@ seyal main(): int {
 # Check compiler version:
 ./tamizhi --version
 ```
+
+---
+
+## 15. Standard Library Modules (`std/*.tzh`)
+
+The Tamizhi standard library provides a rich set of modules that can be included using `serku` (or `import`):
+
+```tamizhi
+# Full standard library import
+serku "std.tzh";
+
+# Or individual module imports
+serku "std/math.tzh";
+serku "std/string.tzh";
+serku "std/io.tzh";
+serku "std/os.tzh";
+serku "std/time.tzh";
+serku "std/random.tzh";
+serku "std/collections.tzh";
+serku "std/testing.tzh";
+```
+
+### Module Breakdown
+
+#### `std/math.tzh` — Mathematical Calculations
+- **Constants**: `MATH_PI` (3.14159...), `MATH_E` (2.71828...), `MATH_TAU` (6.28318...), `PI`, `E`
+- **Angle Conversion**: `deg_to_rad(deg : float) : float`, `rad_to_deg(rad : float) : float`
+- **Clamping**: `clamp(v, min, max) : float`, `clamp_int(v, min, max) : int`
+- **Interpolation**: `lerp(a, b, t : float) : float`
+- **Hypotenuse**: `hypot(x, y : float) : float`
+- **Min / Max / Abs**: `min_f`, `max_f`, `abs_f`, `abs_int`, `sign_f`, `sign_int`
+- **Trigonometry**: `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`
+- **Logs & Powers**: `ln`, `exp`, `sqrt`, `pow`, `floor`, `ceil`, `round`
+- **Tamil Aliases**: `vargamulam` (square root), `madippu` (absolute value), `ellai` (clamp)
+
+#### `std/string.tzh` — String & Character Utilities
+- **Classification**: `is_digit(c)`, `is_alpha(c)`, `is_alphanumeric(c)`, `is_space(c)`, `to_upper_char(c)`, `to_lower_char(c)`
+- **Repetition**: `str_repeat(s, times) : string`
+- **Padding**: `str_pad_left(s, target_len, pad_char)`, `str_pad_right(s, target_len, pad_char)`
+- **Reversal**: `str_reverse(s) : string`
+- **StringBuilder Class**:
+  ```tamizhi
+  edu sb: StringBuilder = StringBuilder();
+  sb.append("Hello");
+  sb.append(" ");
+  sb.append_int(2026);
+  sb.append_line("!");
+  edu result: string = sb.to_str();
+  ```
+
+#### `std/io.tzh` — Filesystem & Path Utilities
+- **Path Manipulation**:
+  - `path_combine(dir, file) : string` (normalizes slashes)
+  - `path_basename(path) : string` (extracts file name)
+  - `path_dirname(path) : string` (extracts directory path)
+  - `path_extension(path) : string` (extracts file extension including dot)
+- **File Management**:
+  - `file_append(path, text) : bool` (creates or appends to file)
+  - `file_remove(path) : bool` (deletes file)
+  - `file_size(path) : int` (returns size in bytes)
+- **Directory Management**:
+  - `dir_create(path) : bool` (creates directory with 0777 permissions)
+  - `dir_remove(path) : bool` (deletes directory)
+
+#### `std/os.tzh` — Operating System & Process Management
+- **OS Information**: `os_name() : string` ("linux"), `os_path_separator() : string` ("/"), `os_temp_dir() : string`
+- **Process Info**: `os_pid() : int`, `os_cwd() : string`, `os_exit(code : int) : void`
+- **Environment**: `os_getenv(name) : string`, `os_setenv(name, val, overwrite : bool) : bool`
+- **Execution**: `os_exec(cmd : string) : int`
+
+#### `std/time.tzh` — Timing & Benchmarking
+- **Sleep**: `time_sleep_ms(ms : int) : void`, `time_sleep_sec(sec : int) : void`
+- **Timestamps**: `time_now() : int`, `time_clock() : int`
+- **Stopwatch Class**:
+  ```tamizhi
+  edu sw: Stopwatch = Stopwatch();
+  sw.start();
+  time_sleep_ms(25);
+  edu elapsed: int = sw.elapsed_ms();
+  ```
+
+#### `std/random.tzh` — Pseudo-Random Number Generation
+- **Seeding**: `rand_seed(seed : int) : void`
+- **Generation**:
+  - `rand_int() : int`
+  - `rand_range(min, max : int) : int` (inclusive range)
+  - `rand_float() : float` (0.0 to 1.0)
+  - `rand_bool() : bool` (random true/false)
+  - `rand_choice_int(a, b : int) : int`
+
+#### `std/collections.tzh` — Dynamic Lists
+- **IntList Class**:
+  - `push(val : int) : bool`, `pop() : int`, `get(idx) : int`, `set(idx, val) : bool`
+  - `length() : int`, `is_empty() : bool`, `clear() : void`
+  - `contains(val) : bool`, `index_of(val) : int`, `sum() : int`
+- **StringList Class**:
+  - `push(s : string) : bool`, `pop() : string`, `get(idx) : string`, `set(idx, s) : bool`
+  - `length() : int`, `is_empty() : bool`, `clear() : void`
+  - `contains(s) : bool`, `index_of(s) : int`, `join(separator) : string`
+
+#### `std/testing.tzh` — Unit Test Assertions
+- `assert_true(cond : bool, test_name : string) : bool`
+- `assert_false(cond : bool, test_name : string) : bool`
+- `assert_eq_int(expected : int, actual : int, test_name : string) : bool`
+- `assert_eq_str(expected : string, actual : string, test_name : string) : bool`
+- `assert_eq_float(expected : float, actual : float, epsilon : float, test_name : string) : bool`
+- `test_summary() : int` (returns number of failures)
+
+---
+
+## 16. Search Path Resolution & Standards
+
+The compiler searches for headers (`serku`) and libraries (`-L`) automatically:
+
+```
+Include resolution search order:
+  1. File-relative directory
+  2. Current working directory (.)
+  3. Compiler flag -I<dir>
+  4. Project include/ and include/tamizhi/
+  5. User-local ~/.local/share/include/tamizhi/ and ~/.local/share/include/
+  6. Standard system /usr/include/tamizhi/ and /usr/local/include/tamizhi/
+  7. TAMIZHI_INCLUDE_PATH environment variable
+
+Library resolution search order:
+  1. Compiler flag -L<dir>
+  2. User-local ~/.local/share/lib/ and ~/.local/share/tamizhi/lib/
+  3. Standard system /usr/lib/tamizhi/ and /usr/local/lib/tamizhi/
+```
+
 

@@ -1,0 +1,65 @@
+── test_math ──
+  [PASS] MATH_PI constant
+  [PASS] MATH_E constant
+  [PASS] deg_to_rad(180)
+  [PASS] rad_to_deg(PI)
+  [PASS] clamp_int min
+  [PASS] clamp_int max
+  [PASS] clamp_int within
+  [PASS] lerp(10, 20, 0.5)
+  [PASS] hypot(3, 4)
+  [PASS] abs_int(-7)
+  [PASS] abs_f(-7.5)
+  [PASS] sin(0)
+  [PASS] cos(0)
+  [PASS] sqrt(16)
+  [PASS] pow(2, 3)
+  [PASS] floor(3.9)
+  [PASS] ceil(3.1)
+  [PASS] round(3.6)
+── test_string ──
+  [PASS] is_digit('5')
+  [PASS] is_digit('a') false
+  [PASS] is_alpha('Z')
+  [PASS] is_space(' ')
+  [PASS] str_repeat('a', 3)
+  [PASS] str_pad_left
+  [PASS] str_pad_right
+  [PASS] str_reverse
+  [PASS] StringBuilder output
+  [PASS] StringBuilder length
+── test_io ──
+  [PASS] path_combine
+  [PASS] path_basename
+  [PASS] path_dirname
+  [PASS] path_extension
+  [PASS] file_write
+  [PASS] file_append
+  [PASS] file_size > 10
+  [PASS] file_remove
+── test_os ──
+  [PASS] os_name
+  [PASS] os_path_separator
+  [PASS] os_pid > 0
+  [PASS] os_cwd length > 0
+  [PASS] os_getenv/setenv
+── test_time ──
+  [PASS] time_now > 1.7B
+  [PASS] stopwatch elapsed >= 0
+── test_random ──
+  [PASS] rand_range(10, 50)
+  [PASS] rand_float [0, 1]
+── test_collections ──
+  [PASS] IntList length 3
+  [PASS] IntList sum 60
+  [PASS] IntList contains 20
+  [PASS] IntList contains 99 false
+  [PASS] IntList pop 30
+  [PASS] IntList length after pop
+  [PASS] StringList length 3
+  [PASS] StringList join
+  [PASS] StringList contains Tamizhi
+  [PASS] StringList pop World
+  [PASS] StringList length after pop
+----------------------------------------
+Tests: 56 | Passed: 56 | Failed: 0

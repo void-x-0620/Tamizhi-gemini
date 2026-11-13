@@ -46,9 +46,12 @@ typedef struct {
     bool          saw_header;   /* a 'veli "x.h"' came before: prototypes trusted */
     ImportSet    *imports;      /* shared by the main file and everything it imports */
     TypedefEntry *typedefs;
+    const char  **inc_dirs;
+    size_t        inc_count;
 } Parser;
 
 void  parser_init(Parser *p, Lexer *L, Arena *arena);
+void  parser_set_include_dirs(Parser *p, const char **dirs, size_t count);
 Node *parse_program(Parser *p);
 
 #endif /* PARSER_H */

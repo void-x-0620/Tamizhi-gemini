@@ -1,0 +1,101 @@
+# Tamizhi Standard Library — IO Module
+# std/io.tzh: Path manipulation, directory management, and enhanced file operations.
+
+veli "<sys/stat.h>";
+veli seyal io_c_mkdir = mkdir(path : string, mode : int) : int;
+
+veli "stdio.h";
+veli seyal io_c_remove = remove(path : string) : int;
+
+# Path manipulation
+seyal path_combine(dir : string, file : string) : string {
+    if (dir.length() == 0) { kudu file; }
+    if (file.length() == 0) { kudu dir; }
+    edu has_slash : bool = (dir[dir.length() - 1] == '/');
+    if (has_slash) {
+        if (file[0] == '/') {
+            kudu dir + file.substring(1, file.length() - 1);
+        }
+        kudu dir + file;
+    }
+    if (file[0] == '/') {
+        kudu dir + file;
+    }
+    kudu dir + "/" + file;
+}
+
+seyal path_join(a : string, b : string) : string {
+    kudu path_combine(a, b);
+}
+
+seyal path_basename(path : string) : string {
+    edu len : int = path.length();
+    if (len == 0) { kudu ""; }
+    edu last_slash : int = -1;
+    for (edu i : int = len - 1; i >= 0; i = i - 1) {
+        if (path[i] == '/') {
+            last_slash = i;
+            break;
+        }
+    }
+    if (last_slash < 0) { kudu path; }
+    kudu path.substring(last_slash + 1, len - last_slash - 1);
+}
+
+seyal path_dirname(path : string) : string {
+    edu len : int = path.length();
+    if (len == 0) { kudu "."; }
+    edu last_slash : int = -1;
+    for (edu i : int = len - 1; i >= 0; i = i - 1) {
+        if (path[i] == '/') {
+            last_slash = i;
+            break;
+        }
+    }
+    if (last_slash < 0) { kudu "."; }
+    if (last_slash == 0) { kudu "/"; }
+    kudu path.substring(0, last_slash);
+}
+
+seyal path_extension(path : string) : string {
+    edu base : string = path_basename(path);
+    edu len : int = base.length();
+    edu last_dot : int = -1;
+    for (edu i : int = len - 1; i >= 0; i = i - 1) {
+        if (base[i] == '.') {
+            last_dot = i;
+            break;
+        }
+    }
+    if (last_dot <= 0) { kudu ""; }
+    kudu base.substring(last_dot, len - last_dot);
+}
+
+# File operations
+seyal file_append(path : string, content : string) : bool {
+    if (!file_exists(path)) {
+        kudu file_write(path, content);
+    }
+    edu current : string = file_read(path);
+    kudu file_write(path, current + content);
+}
+
+seyal file_remove(path : string) : bool {
+    kudu io_c_remove(path) == 0;
+}
+
+seyal file_size(path : string) : int {
+    if (!file_exists(path)) { kudu -1; }
+    edu content : string = file_read(path);
+    kudu content.length();
+}
+
+# Directory operations
+seyal dir_create(path : string) : bool {
+    # 511 is octal 0777 (rwxrwxrwx)
+    kudu io_c_mkdir(path, 511) == 0;
+}
+
+seyal dir_remove(path : string) : bool {
+    kudu io_c_remove(path) == 0;
+}

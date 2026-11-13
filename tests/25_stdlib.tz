@@ -1,0 +1,147 @@
+# tests/25_stdlib.tz — Verification of Tamizhi Standard Library modules
+
+serku "std/math.tzh";
+serku "std/string.tzh";
+serku "std/io.tzh";
+serku "std/os.tzh";
+serku "std/time.tzh";
+serku "std/random.tzh";
+serku "std/collections.tzh";
+serku "std/testing.tzh";
+
+seyal test_math() : void {
+    pathi("── test_math ──\n");
+    assert_true(MATH_PI > 3.14 && MATH_PI < 3.15, "MATH_PI constant");
+    assert_true(MATH_E > 2.71 && MATH_E < 2.72, "MATH_E constant");
+
+    edu deg: float = 180.0;
+    edu rad: float = deg_to_rad(deg);
+    assert_eq_float(MATH_PI, rad, 0.0001, "deg_to_rad(180)");
+    assert_eq_float(180.0, rad_to_deg(rad), 0.0001, "rad_to_deg(PI)");
+
+    assert_eq_int(10, clamp_int(5, 10, 20), "clamp_int min");
+    assert_eq_int(20, clamp_int(25, 10, 20), "clamp_int max");
+    assert_eq_int(15, clamp_int(15, 10, 20), "clamp_int within");
+
+    assert_eq_float(15.0, lerp(10.0, 20.0, 0.5), 0.0001, "lerp(10, 20, 0.5)");
+    assert_eq_float(5.0, hypot(3.0, 4.0), 0.0001, "hypot(3, 4)");
+
+    assert_eq_int(7, abs_int(-7), "abs_int(-7)");
+    assert_eq_float(7.5, abs_f(-7.5), 0.0001, "abs_f(-7.5)");
+
+    assert_eq_float(0.0, sin(0.0), 0.0001, "sin(0)");
+    assert_eq_float(1.0, cos(0.0), 0.0001, "cos(0)");
+    assert_eq_float(4.0, sqrt(16.0), 0.0001, "sqrt(16)");
+    assert_eq_float(8.0, pow(2.0, 3.0), 0.0001, "pow(2, 3)");
+    assert_eq_float(3.0, floor(3.9), 0.0001, "floor(3.9)");
+    assert_eq_float(4.0, ceil(3.1), 0.0001, "ceil(3.1)");
+    assert_eq_float(4.0, round(3.6), 0.0001, "round(3.6)");
+}
+
+seyal test_string() : void {
+    pathi("── test_string ──\n");
+    assert_true(is_digit('5'), "is_digit('5')");
+    assert_false(is_digit('a'), "is_digit('a') false");
+    assert_true(is_alpha('Z'), "is_alpha('Z')");
+    assert_true(is_space(' '), "is_space(' ')");
+
+    assert_eq_str("aaa", str_repeat("a", 3), "str_repeat('a', 3)");
+    assert_eq_str("0042", str_pad_left("42", 4, '0'), "str_pad_left");
+    assert_eq_str("hi__", str_pad_right("hi", 4, '_'), "str_pad_right");
+    assert_eq_str("ihzimat", str_reverse("tamizhi"), "str_reverse");
+
+    edu sb: StringBuilder = StringBuilder();
+    sb.append("Tamizhi");
+    sb.append(" ");
+    sb.append("v");
+    sb.append_int(2);
+    sb.append_char('!');
+    assert_eq_str("Tamizhi v2!", sb.to_str(), "StringBuilder output");
+    assert_eq_int(11, sb.length(), "StringBuilder length");
+}
+
+seyal test_io() : void {
+    pathi("── test_io ──\n");
+    edu comb: string = path_combine("/usr/include", "tamizhi/std.tzh");
+    assert_eq_str("/usr/include/tamizhi/std.tzh", comb, "path_combine");
+    assert_eq_str("std.tzh", path_basename(comb), "path_basename");
+    assert_eq_str("/usr/include/tamizhi", path_dirname(comb), "path_dirname");
+    assert_eq_str(".tzh", path_extension(comb), "path_extension");
+
+    edu test_file: string = "/tmp/tz_io_test.txt";
+    file_remove(test_file);
+    assert_true(file_write(test_file, "Line 1\n"), "file_write");
+    assert_true(file_append(test_file, "Line 2\n"), "file_append");
+    assert_true(file_size(test_file) > 10, "file_size > 10");
+    assert_true(file_remove(test_file), "file_remove");
+}
+
+seyal test_os() : void {
+    pathi("── test_os ──\n");
+    assert_eq_str("linux", os_name(), "os_name");
+    assert_eq_str("/", os_path_separator(), "os_path_separator");
+    assert_true(os_pid() > 0, "os_pid > 0");
+    assert_true(os_cwd().length() > 0, "os_cwd length > 0");
+
+    os_setenv("TZ_ENV_VAR", "tamizhi_power", true);
+    assert_eq_str("tamizhi_power", os_getenv("TZ_ENV_VAR"), "os_getenv/setenv");
+}
+
+seyal test_time() : void {
+    pathi("── test_time ──\n");
+    assert_true(time_now() > 1700000000, "time_now > 1.7B");
+
+    edu sw: Stopwatch = Stopwatch();
+    sw.start();
+    time_sleep_ms(10);
+    edu elapsed: int = sw.elapsed_ms();
+    assert_true(elapsed >= 0, "stopwatch elapsed >= 0");
+}
+
+seyal test_random() : void {
+    pathi("── test_random ──\n");
+    rand_seed(999);
+    edu r: int = rand_range(10, 50);
+    assert_true(r >= 10 && r <= 50, "rand_range(10, 50)");
+
+    edu f: float = rand_float();
+    assert_true(f >= 0.0 && f <= 1.0, "rand_float [0, 1]");
+}
+
+seyal test_collections() : void {
+    pathi("── test_collections ──\n");
+    edu il: IntList = IntList();
+    il.push(10);
+    il.push(20);
+    il.push(30);
+    assert_eq_int(3, il.length(), "IntList length 3");
+    assert_eq_int(60, il.sum(), "IntList sum 60");
+    assert_true(il.contains(20), "IntList contains 20");
+    assert_false(il.contains(99), "IntList contains 99 false");
+    edu popped_i: int = il.pop();
+    assert_eq_int(30, popped_i, "IntList pop 30");
+    assert_eq_int(2, il.length(), "IntList length after pop");
+
+    edu sl: StringList = StringList();
+    sl.push("Vanakkam");
+    sl.push("Tamizhi");
+    sl.push("World");
+    assert_eq_int(3, sl.length(), "StringList length 3");
+    assert_eq_str("Vanakkam, Tamizhi, World", sl.join(", "), "StringList join");
+    assert_true(sl.contains("Tamizhi"), "StringList contains Tamizhi");
+    edu popped_s: string = sl.pop();
+    assert_eq_str("World", popped_s, "StringList pop World");
+    assert_eq_int(2, sl.length(), "StringList length after pop");
+}
+
+seyal main() : int {
+    test_math();
+    test_string();
+    test_io();
+    test_os();
+    test_time();
+    test_random();
+    test_collections();
+    test_summary();
+    kudu 0;
+}

@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <limits.h>
 
 #include "lexer.h"
 #include "parser.h"
@@ -242,9 +243,47 @@ static char *default_object_name(const char *input) {
     return out;
 }
 
+static bool dir_exists(const char *path) {
+    struct stat st;
+    return stat(path, &st) == 0 && S_ISDIR(st.st_mode);
+}
+
+static void add_dir_if_exists(StrList *list, const char *prefix, const char *path) {
+    if (dir_exists(path)) {
+        char *buf = malloc(strlen(prefix) + strlen(path) + 1);
+        if (buf) {
+            sprintf(buf, "%s%s", prefix, path);
+            list_push(list, buf);
+        }
+    }
+}
+
+static void add_default_system_paths(Config *c) {
+    const char *home = getenv("HOME");
+    char path[PATH_MAX];
+    if (home && home[0]) {
+        snprintf(path, sizeof path, "%s/.local/share/include", home);
+        add_dir_if_exists(&c->inc, "-I", path);
+        snprintf(path, sizeof path, "%s/.local/share/include/tamizhi", home);
+        add_dir_if_exists(&c->inc, "-I", path);
+        snprintf(path, sizeof path, "%s/.local/share/tamizhi/include", home);
+        add_dir_if_exists(&c->inc, "-I", path);
+
+        snprintf(path, sizeof path, "%s/.local/share/lib", home);
+        add_dir_if_exists(&c->libdir, "-L", path);
+        snprintf(path, sizeof path, "%s/.local/share/tamizhi/lib", home);
+        add_dir_if_exists(&c->libdir, "-L", path);
+    }
+    add_dir_if_exists(&c->inc, "-I", "/usr/local/include/tamizhi");
+    add_dir_if_exists(&c->inc, "-I", "/usr/include/tamizhi");
+    add_dir_if_exists(&c->libdir, "-L", "/usr/local/lib/tamizhi");
+    add_dir_if_exists(&c->libdir, "-L", "/usr/lib/tamizhi");
+}
+
 int main(int argc, char **argv) {
     Config cfg;
     if (!parse_args(argc, argv, &cfg)) return 2;
+    add_default_system_paths(&cfg);
     signal(SIGPIPE, SIG_IGN);
 
     double t0 = now_ms();
@@ -266,6 +305,18 @@ int main(int argc, char **argv) {
     lexer_init(&lexer, source, cfg.input, arena);
     Parser parser;
     parser_init(&parser, &lexer, arena);
+
+    const char **raw_inc = NULL;
+    if (cfg.inc.n > 0) {
+        raw_inc = malloc(cfg.inc.n * sizeof(const char *));
+        if (raw_inc) {
+            for (size_t i = 0; i < cfg.inc.n; i++) {
+                raw_inc[i] = cfg.inc.v[i] + 2; /* strip "-I" */
+            }
+            parser_set_include_dirs(&parser, raw_inc, cfg.inc.n);
+        }
+    }
+
     Node *ast = parse_program(&parser);
     double t_parse = now_ms();
 
@@ -340,6 +391,7 @@ int main(int argc, char **argv) {
 
 done:
     if (cg_ready) codegen_free(&cg);
+    free(raw_inc);
     for (size_t i = 0; i < cfg.inc.n; i++)    free((void *)cfg.inc.v[i]);
     for (size_t i = 0; i < cfg.libdir.n; i++) free((void *)cfg.libdir.v[i]);
     for (size_t i = 0; i < cfg.lib.n; i++)    free((void *)cfg.lib.v[i]);

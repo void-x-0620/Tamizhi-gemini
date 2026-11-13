@@ -102,11 +102,18 @@ void parser_init(Parser *p, Lexer *L, Arena *arena) {
     p->binding = false;
     p->saw_header = false;
     p->typedefs = NULL;
+    p->inc_dirs = NULL;
+    p->inc_count = 0;
     p->imports = arena_alloc(arena, sizeof(ImportSet));
     memset(p->imports, 0, sizeof *p->imports);
     char real[PATH_MAX];                       /* never import the main file again */
     if (L->filename && realpath(L->filename, real))
         p->imports->paths[p->imports->count++] = arena_strdup(arena, real);
+}
+
+void parser_set_include_dirs(Parser *p, const char **dirs, size_t count) {
+    p->inc_dirs = dirs;
+    p->inc_count = count;
 }
 
 Node *parse_program(Parser *p) {
@@ -194,28 +201,93 @@ static void dir_of(const char *file, char *buf, size_t cap) {
     buf[n] = '\0';
 }
 
+static char *try_open(Parser *p, const char *path, char *out, size_t cap) {
+    if (!path || !path[0]) return NULL;
+    int n = snprintf(out, cap, "%s", path);
+    if (n > 0 && (size_t)n < cap) {
+        char *src = read_source_file(out, p->arena);
+        if (src) return src;
+    }
+    return NULL;
+}
+
 static char *open_relative(Parser *p, const char *name, char *out, size_t cap) {
+    if (!name || !name[0]) return NULL;
+    char path_buf[PATH_MAX * 2];
+    char *src = NULL;
+
+    if (name[0] == '/') {
+        return try_open(p, name, out, cap);
+    }
+
+    /* 1. File-relative */
     char dir[PATH_MAX];
     dir_of(p->lexer->filename, dir, sizeof dir);
-    if (name[0] != '/' && dir[0]) {
-        int n = snprintf(out, cap, "%s/%s", dir, name);
-        if (n > 0 && (size_t)n < cap) {
-            char *src = read_source_file(out, p->arena);
-            if (src) return src;
-        }
+    if (dir[0]) {
+        snprintf(path_buf, sizeof path_buf, "%s/%s", dir, name);
+        if ((src = try_open(p, path_buf, out, cap))) return src;
     }
-    snprintf(out, cap, "%s", name);
-    char *src = read_source_file(out, p->arena);
-    if (src) return src;
 
-    /* Search in include/ directory */
-    if (name[0] != '/') {
-        int n = snprintf(out, cap, "include/%s", name);
-        if (n > 0 && (size_t)n < cap) {
-            src = read_source_file(out, p->arena);
-            if (src) return src;
+    /* 2. Current working directory */
+    if ((src = try_open(p, name, out, cap))) return src;
+
+    /* 3. User -I include directories */
+    for (size_t i = 0; i < p->inc_count; i++) {
+        if (p->inc_dirs[i] && p->inc_dirs[i][0]) {
+            snprintf(path_buf, sizeof path_buf, "%s/%s", p->inc_dirs[i], name);
+            if ((src = try_open(p, path_buf, out, cap))) return src;
         }
     }
+
+    /* 4. Project-local include/ directories */
+    snprintf(path_buf, sizeof path_buf, "include/%s", name);
+    if ((src = try_open(p, path_buf, out, cap))) return src;
+    snprintf(path_buf, sizeof path_buf, "include/tamizhi/%s", name);
+    if ((src = try_open(p, path_buf, out, cap))) return src;
+
+    /* 5. User-local directories (~/.local/share/...) */
+    const char *home = getenv("HOME");
+    if (home && home[0]) {
+        snprintf(path_buf, sizeof path_buf, "%s/.local/share/include/%s", home, name);
+        if ((src = try_open(p, path_buf, out, cap))) return src;
+        snprintf(path_buf, sizeof path_buf, "%s/.local/share/include/tamizhi/%s", home, name);
+        if ((src = try_open(p, path_buf, out, cap))) return src;
+        snprintf(path_buf, sizeof path_buf, "%s/.local/share/tamizhi/include/%s", home, name);
+        if ((src = try_open(p, path_buf, out, cap))) return src;
+    }
+
+    /* 6. System directories (/usr/...) */
+    snprintf(path_buf, sizeof path_buf, "/usr/local/include/tamizhi/%s", name);
+    if ((src = try_open(p, path_buf, out, cap))) return src;
+    snprintf(path_buf, sizeof path_buf, "/usr/local/include/%s", name);
+    if ((src = try_open(p, path_buf, out, cap))) return src;
+    snprintf(path_buf, sizeof path_buf, "/usr/include/tamizhi/%s", name);
+    if ((src = try_open(p, path_buf, out, cap))) return src;
+    snprintf(path_buf, sizeof path_buf, "/usr/include/%s", name);
+    if ((src = try_open(p, path_buf, out, cap))) return src;
+
+    /* 7. Environment TAMIZHI_INCLUDE_PATH (colon-separated) */
+    const char *env_inc = getenv("TAMIZHI_INCLUDE_PATH");
+    if (env_inc && env_inc[0]) {
+        char *copy = strdup(env_inc);
+        if (copy) {
+            char *saveptr = NULL;
+            char *token = strtok_r(copy, ":", &saveptr);
+            while (token) {
+                if (token[0]) {
+                    snprintf(path_buf, sizeof path_buf, "%s/%s", token, name);
+                    src = try_open(p, path_buf, out, cap);
+                    if (src) {
+                        free(copy);
+                        return src;
+                    }
+                }
+                token = strtok_r(NULL, ":", &saveptr);
+            }
+            free(copy);
+        }
+    }
+
     return NULL;
 }
 
@@ -262,6 +334,8 @@ static Node *parse_import(Parser *p) {
     parser_init(&sp, &sub, p->arena);
     sp.imports = imp;                       /* share the include-once set */
     sp.typedefs = p->typedefs;
+    sp.inc_dirs = p->inc_dirs;
+    sp.inc_count = p->inc_count;
     const char *ext = strrchr(cand, '.');
     sp.binding = (ext && !strcmp(ext, ".tzb"));
     imp->depth++;

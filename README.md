@@ -1,9 +1,19 @@
-# Tamizhi (v2.4.0)
+# Tamizhi (v2.5.0)
 
 A compiler for Tamizhi (a Tanglish and C-compatible language) written in C.
 It translates Tamizhi source directly to optimized C99 and compiles with the host C compiler (GCC/Clang), producing high-performance native binaries with zero interpretation overhead.
 
-Version 2.4.0 adds **String Compound Assignment (`+=`)**, **String Character Indexing (`s[i]`)**, **Rich String Methods (`.contains()`, `.starts_with()`, `.ends_with()`, `.to_uppercase()`, `.to_lowercase()`, `.trim()`, `.replace()`)**, **Type Conversion & Parsing Intrinsics (`str_to_int`, `str_to_float`, `int_to_str`, etc.)**, **Extended Math Intrinsics (`math_floor`, `math_ceil`, `math_round`)**, **System & Environment Intrinsics (`sys_time`, `sys_getenv`, `sys_system`)**, and comprehensive **Bug & Robustness Fixes** (null-safe string comparisons, safe f-string brace escaping `\{` / `{{`).
+Version 2.5.0 introduces the **Comprehensive Tamizhi Standard Library (`std`)**, **Standard Include & Library Resolution Path Hierarchy**, and **Installation Targets (`make install`, `make install-user`)**:
+- **`std/math.tzh`**: High-precision trigonometric functions (`sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`), constants (`MATH_PI`, `MATH_E`, `MATH_TAU`), rounding (`floor`, `ceil`, `round`), clamping (`clamp`, `clamp_int`), `lerp`, `hypot`, and Tamil aliases.
+- **`std/string.tzh`**: Character classification (`is_digit`, `is_alpha`, `is_space`), string repeat, left/right padding, string reversal, and mutable `StringBuilder` class.
+- **`std/io.tzh`**: Cross-platform path helpers (`path_combine`, `path_basename`, `path_dirname`, `path_extension`), file utilities (`file_append`, `file_remove`, `file_size`), and directory management (`dir_create`, `dir_remove`).
+- **`std/os.tzh`**: Process management (`os_pid`, `os_cwd`, `os_exit`, `os_setenv`, `os_getenv`, `os_exec`, `os_name`, `os_temp_dir`).
+- **`std/time.tzh`**: High-precision sleep (`time_sleep_ms`, `time_sleep_sec`), timestamps (`time_now`, `time_clock`), and object-oriented `Stopwatch` timer.
+- **`std/random.tzh`**: PRNG utilities (`rand_seed`, `rand_int`, `rand_range`, `rand_float`, `rand_bool`, `rand_choice_int`).
+- **`std/collections.tzh`**: Dynamic data structures (`IntList`, `StringList` with `push`, `pop`, `get`, `set`, `length`, `contains`, `sum`, `join`).
+- **`std/testing.tzh`**: Zero-dependency assertion framework (`assert_true`, `assert_false`, `assert_eq_int`, `assert_eq_str`, `assert_eq_float`, `test_summary`).
+- **Umbrella headers**: `serku "std.tzh";` or `serku "tamizhi.tzh";` to import the entire standard library with one line.
+- **Search Path Resolution**: Automatic resolution across local project `./include`, user-local `~/.local/share/include/tamizhi`, and system `/usr/include/tamizhi`, plus library lookup in `~/.local/share/lib` and `/usr/lib/tamizhi`.
 
 ---
 
@@ -594,13 +604,118 @@ edu code: int = sys_system("echo 'Run!'");  # or kattalai("...")
 
 ---
 
+### 15. Standard Library Modules (`std/*.tzh`)
+
+Tamizhi includes a modular standard library accessible via `serku` (or `import`):
+
+```tamizhi
+# Import individual modules:
+serku "std/math.tzh";
+serku "std/string.tzh";
+serku "std/io.tzh";
+serku "std/os.tzh";
+serku "std/time.tzh";
+serku "std/random.tzh";
+serku "std/collections.tzh";
+serku "std/testing.tzh";
+
+# Or import all modules at once:
+serku "std.tzh";
+```
+
+#### Standard Library Modules Reference:
+
+1. **`std/math.tzh`**:
+   - Constants: `MATH_PI`, `MATH_E`, `MATH_TAU`, `PI`, `E`
+   - Conversions: `deg_to_rad(deg)`, `rad_to_deg(rad)`
+   - Utilities: `clamp(v, min, max)`, `clamp_int(v, min, max)`, `lerp(a, b, t)`, `hypot(x, y)`, `min_f`, `max_f`, `abs_f`, `abs_int`, `sign_f`, `sign_int`
+   - Trigonometry: `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`
+   - Exponentials & Roots: `ln`, `exp`, `sqrt`, `pow`, `floor`, `ceil`, `round`
+   - Tamil aliases: `vargamulam` (sqrt), `madippu` (abs), `ellai` (clamp)
+
+2. **`std/string.tzh`**:
+   - Character classification: `is_digit(c)`, `is_alpha(c)`, `is_alphanumeric(c)`, `is_space(c)`, `to_upper_char(c)`, `to_lower_char(c)`
+   - String utilities: `str_repeat(s, n)`, `str_pad_left(s, len, ch)`, `str_pad_right(s, len, ch)`, `str_reverse(s)`
+   - `StringBuilder` class:
+     ```tamizhi
+     edu sb: StringBuilder = StringBuilder();
+     sb.append("Tamizhi ");
+     sb.append_int(2);
+     sb.append_char('!');
+     pathi("%s\n", sb.to_str());  # "Tamizhi 2!"
+     ```
+
+3. **`std/io.tzh`**:
+   - Path helpers: `path_combine(dir, file)`, `path_join(a, b)`, `path_basename(path)`, `path_dirname(path)`, `path_extension(path)`
+   - File helpers: `file_append(path, text)`, `file_remove(path)`, `file_size(path)`
+   - Directory helpers: `dir_create(path)`, `dir_remove(path)`
+
+4. **`std/os.tzh`**:
+   - System metadata: `os_name()`, `os_path_separator()`, `os_temp_dir()`
+   - Process control: `os_pid()`, `os_cwd()`, `os_exit(code)`, `os_exec(cmd)`
+   - Environment: `os_getenv(key)`, `os_setenv(key, value, overwrite)`
+
+5. **`std/time.tzh`**:
+   - High-precision sleep: `time_sleep_ms(ms)`, `time_sleep_sec(sec)`
+   - Timestamps: `time_now()`, `time_clock()`
+   - `Stopwatch` class:
+     ```tamizhi
+     edu sw: Stopwatch = Stopwatch();
+     sw.start();
+     time_sleep_ms(50);
+     pathi("Elapsed: %d ms\n", sw.elapsed_ms());
+     ```
+
+6. **`std/random.tzh`**:
+   - PRNG seed: `rand_seed(seed)`
+   - Number generation: `rand_int()`, `rand_range(min, max)`, `rand_float()`, `rand_bool()`, `rand_choice_int(a, b)`
+
+7. **`std/collections.tzh`**:
+   - `IntList` class: `push(val)`, `pop()`, `get(idx)`, `set(idx, val)`, `length()`, `is_empty()`, `clear()`, `contains(val)`, `index_of(val)`, `sum()`
+   - `StringList` class: `push(s)`, `pop()`, `get(idx)`, `set(idx, s)`, `length()`, `is_empty()`, `clear()`, `contains(s)`, `index_of(s)`, `join(separator)`
+
+8. **`std/testing.tzh`**:
+   - Assertions: `assert_true(cond, name)`, `assert_false(cond, name)`, `assert_eq_int(exp, act, name)`, `assert_eq_str(exp, act, name)`, `assert_eq_float(exp, act, eps, name)`
+   - Summary reporter: `test_summary()` -> returns count of failed tests.
+
+---
+
+### 16. Search Path Hierarchy & Installation
+
+The Tamizhi compiler automatically resolves headers (`serku`) and libraries (`-L`):
+
+#### Header Search Order:
+1. Current file directory (relative includes)
+2. Current working directory
+3. Explicit `-I<dir>` flags
+4. Project `./include/` and `./include/tamizhi/`
+5. User-local `~/.local/share/include/tamizhi/` and `~/.local/share/include/`
+6. System `/usr/include/tamizhi/` and `/usr/local/include/tamizhi/`
+7. Paths specified in `TAMIZHI_INCLUDE_PATH` environment variable
+
+#### Library Search Order:
+1. Explicit `-L<dir>` flags
+2. User-local `~/.local/share/lib/` and `~/.local/share/tamizhi/lib/`
+3. System `/usr/lib/tamizhi/` and `/usr/local/lib/tamizhi/`
+
+#### Installation:
+```sh
+# System-wide installation (requires sudo / root):
+sudo make install           # installs to /usr/bin, /usr/include/tamizhi, /usr/lib/tamizhi
+
+# User-local installation (no root needed):
+make install-user      # installs to ~/.local/bin and ~/.local/share/include/tamizhi
+```
+
+---
+
 ## Testing
 
 ```sh
 make test
 ```
-Runs 57 test suites:
-- 24 program tests (`tests/01_hello.tz` to `tests/24_v24_features.tz`)
+Runs 58 test suites:
+- 25 program tests (`tests/01_hello.tz` to `tests/25_stdlib.tz`)
 - 22 compile-error diagnostic tests (`tests/errors/`)
 - C FFI bindings tests (`tests/ext/`)
 - Heap and Boehm GC tests (`tests/heap/`)

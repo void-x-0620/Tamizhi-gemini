@@ -1,0 +1,138 @@
+# Tamizhi Standard Library — Collections Module
+# std/collections.tzh: Dynamic IntList and StringList collections.
+
+vaguppu IntList {
+    items : int[128];
+    count : int;
+
+    seyal uruvakku() {
+        this.count = 0;
+    }
+
+    seyal push(val : int) : bool {
+        if (this.count >= 128) { kudu false; }
+        this.items[this.count] = val;
+        this.count = this.count + 1;
+        kudu true;
+    }
+
+    seyal pop() : int {
+        if (this.count <= 0) { kudu 0; }
+        this.count = this.count - 1;
+        kudu this.items[this.count];
+    }
+
+    seyal get(idx : int) : int {
+        if (idx < 0 || idx >= this.count) { kudu 0; }
+        kudu this.items[idx];
+    }
+
+    seyal set(idx : int, val : int) : bool {
+        if (idx < 0 || idx >= this.count) { kudu false; }
+        this.items[idx] = val;
+        kudu true;
+    }
+
+    seyal length() : int {
+        kudu this.count;
+    }
+
+    seyal is_empty() : bool {
+        kudu this.count == 0;
+    }
+
+    seyal clear() : void {
+        this.count = 0;
+    }
+
+    seyal contains(val : int) : bool {
+        for (edu i : int = 0; i < this.count; i = i + 1) {
+            if (this.items[i] == val) { kudu true; }
+        }
+        kudu false;
+    }
+
+    seyal index_of(val : int) : int {
+        for (edu i : int = 0; i < this.count; i = i + 1) {
+            if (this.items[i] == val) { kudu i; }
+        }
+        kudu -1;
+    }
+
+    seyal sum() : int {
+        edu total : int = 0;
+        for (edu i : int = 0; i < this.count; i = i + 1) {
+            total = total + this.items[i];
+        }
+        kudu total;
+    }
+}
+
+vaguppu StringList {
+    items : string[128];
+    count : int;
+
+    seyal uruvakku() {
+        this.count = 0;
+    }
+
+    seyal push(s : string) : bool {
+        if (this.count >= 128) { kudu false; }
+        this.items[this.count] = s;
+        this.count = this.count + 1;
+        kudu true;
+    }
+
+    seyal pop() : string {
+        if (this.count <= 0) { kudu ""; }
+        this.count = this.count - 1;
+        kudu this.items[this.count];
+    }
+
+    seyal get(idx : int) : string {
+        if (idx < 0 || idx >= this.count) { kudu ""; }
+        kudu this.items[idx];
+    }
+
+    seyal set(idx : int, s : string) : bool {
+        if (idx < 0 || idx >= this.count) { kudu false; }
+        this.items[idx] = s;
+        kudu true;
+    }
+
+    seyal length() : int {
+        kudu this.count;
+    }
+
+    seyal is_empty() : bool {
+        kudu this.count == 0;
+    }
+
+    seyal clear() : void {
+        this.count = 0;
+    }
+
+    seyal contains(s : string) : bool {
+        for (edu i : int = 0; i < this.count; i = i + 1) {
+            if (this.items[i] == s) { kudu true; }
+        }
+        kudu false;
+    }
+
+    seyal index_of(s : string) : int {
+        for (edu i : int = 0; i < this.count; i = i + 1) {
+            if (this.items[i] == s) { kudu i; }
+        }
+        kudu -1;
+    }
+
+    seyal join(sep : string) : string {
+        if (this.count == 0) { kudu ""; }
+        edu res : string = this.items[0];
+        for (edu i : int = 1; i < this.count; i = i + 1) {
+            res += sep;
+            res += this.items[i];
+        }
+        kudu res;
+    }
+}

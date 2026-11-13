@@ -13,7 +13,11 @@ SRCS     := main.c util.c lexer.c ast.c parser.c sema.c codegen.c
 OBJS     := $(SRCS:.c=.o)
 HDRS     := tamizhi.h lexer.h ast.h parser.h sema.h codegen.h
 
-.PHONY: all test asan clean
+PREFIX     ?= /usr
+USER_SHARE ?= $(HOME)/.local/share
+USER_BIN   ?= $(HOME)/.local/bin
+
+.PHONY: all test asan clean install install-user
 
 all: $(TARGET)
 
@@ -89,3 +93,23 @@ test: $(TARGET)
 
 clean:
 	rm -f $(OBJS) $(TARGET) $(TARGET)-asan
+
+install: $(TARGET)
+	install -d $(DESTDIR)$(PREFIX)/bin
+	install -m 755 $(TARGET) $(DESTDIR)$(PREFIX)/bin/$(TARGET)
+	install -d $(DESTDIR)$(PREFIX)/include/tamizhi/std
+	install -m 644 include/tamizhi/std/*.tzh $(DESTDIR)$(PREFIX)/include/tamizhi/std/
+	install -m 644 include/tamizhi/*.tzh $(DESTDIR)$(PREFIX)/include/tamizhi/
+	install -d $(DESTDIR)$(PREFIX)/lib/tamizhi
+
+install-user: $(TARGET)
+	install -d $(USER_BIN)
+	install -m 755 $(TARGET) $(USER_BIN)/$(TARGET)
+	install -d $(USER_SHARE)/include/tamizhi/std
+	install -d $(USER_SHARE)/include/std
+	install -m 644 include/tamizhi/std/*.tzh $(USER_SHARE)/include/tamizhi/std/
+	install -m 644 include/tamizhi/*.tzh $(USER_SHARE)/include/tamizhi/
+	install -m 644 include/tamizhi/std/*.tzh $(USER_SHARE)/include/std/
+	install -m 644 include/tamizhi/*.tzh $(USER_SHARE)/include/
+	install -d $(USER_SHARE)/lib
+

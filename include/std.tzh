@@ -1,27 +1,11 @@
-# Tamizhi Standard Library Header (std.tzh)
-# Provides core type definitions, common constants, and utility helpers.
+# Tamizhi Standard Library — Full Umbrella Header
+# std.tzh: Imports math, string, io, os, time, random, collections, and testing.
 
-typedef int64_t  Int;
-typedef uint64_t UInt;
-typedef double   Float;
-typedef char*    String;
-
-# Common integer helpers
-seyal min(a : int, b : int) : int {
-    kudu (a < b) ? a : b;
-}
-
-seyal max(a : int, b : int) : int {
-    kudu (a > b) ? a : b;
-}
-
-seyal abs(x : int) : int {
-    kudu (x < 0) ? -x : x;
-}
-
-seyal clamp(val : int, low : int, high : int) : int {
-    if (val < low) kudu low;
-    if (val > high) kudu high;
-    kudu val;
-}
-
+serku "std/math.tzh";
+serku "std/string.tzh";
+serku "std/io.tzh";
+serku "std/os.tzh";
+serku "std/time.tzh";
+serku "std/random.tzh";
+serku "std/collections.tzh";
+serku "std/testing.tzh";

@@ -3,3 +3,4 @@ seyal main(): int {
     s[0] = 'H';
     kudu 0;
 }
+

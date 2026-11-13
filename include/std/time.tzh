@@ -1,0 +1,65 @@
+# Tamizhi Standard Library — Time Module
+# std/time.tzh: High-precision sleep, timestamp tracking, and Stopwatch timer.
+
+veli "<unistd.h>";
+veli seyal time_c_usleep = usleep(usec : int) : int;
+
+veli "<time.h>";
+veli seyal time_c_clock = clock() : int;
+
+# Sleep functions
+seyal time_sleep_ms(ms : int) : void {
+    if (ms > 0) {
+        time_c_usleep(ms * 1000);
+    }
+}
+
+seyal time_sleep_sec(sec : int) : void {
+    if (sec > 0) {
+        time_c_usleep(sec * 1000000);
+    }
+}
+
+# Timestamps
+seyal time_now() : int {
+    kudu sys_time();
+}
+
+seyal time_clock() : int {
+    kudu time_c_clock();
+}
+
+# Stopwatch class
+vaguppu Stopwatch {
+    start_ticks : int;
+    is_running  : bool;
+
+    seyal uruvakku() {
+        this.start_ticks = 0;
+        this.is_running = false;
+    }
+
+    seyal start() : void {
+        this.start_ticks = time_c_clock();
+        this.is_running = true;
+    }
+
+    seyal elapsed_ms() : int {
+        if (!this.is_running) { kudu 0; }
+        kudu (time_c_clock() - this.start_ticks) / 1000;
+    }
+
+    seyal elapsed_sec() : int {
+        kudu this.elapsed_ms() / 1000;
+    }
+
+    seyal reset() : void {
+        this.start_ticks = time_c_clock();
+    }
+
+    seyal stop() : int {
+        edu ms : int = this.elapsed_ms();
+        this.is_running = false;
+        kudu ms;
+    }
+}

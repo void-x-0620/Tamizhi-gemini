@@ -1,0 +1,54 @@
+# Tamizhi Standard Library — OS Module
+# std/os.tzh: Process info, environment manipulation, system execution, and OS metadata.
+
+veli "<unistd.h>";
+veli seyal os_c_getpid = getpid() : int;
+veli seyal os_c_getcwd = getcwd(buf : string, size : int) : string;
+
+veli "<stdlib.h>";
+veli seyal os_c_setenv = setenv(name : string, val : string, overwrite : int) : int;
+veli seyal os_c_exit   = exit(code : int) : void;
+
+# OS Metadata
+seyal os_name() : string {
+    kudu "linux";
+}
+
+seyal os_path_separator() : string {
+    kudu "/";
+}
+
+seyal os_temp_dir() : string {
+    edu tmp : string = sys_getenv("TMPDIR");
+    if (tmp.length() > 0) { kudu tmp; }
+    kudu "/tmp";
+}
+
+# Current working directory
+seyal os_cwd() : string {
+    kudu os_c_getcwd(null, 0);
+}
+
+# Process ID
+seyal os_pid() : int {
+    kudu os_c_getpid();
+}
+
+# Process exit
+seyal os_exit(code : int) : void {
+    os_c_exit(code);
+}
+
+# Environment variables
+seyal os_getenv(name : string) : string {
+    kudu sys_getenv(name);
+}
+
+seyal os_setenv(name : string, value : string, overwrite : bool) : bool {
+    kudu os_c_setenv(name, value, overwrite ? 1 : 0) == 0;
+}
+
+# System command execution
+seyal os_exec(cmd : string) : int {
+    kudu sys_system(cmd);
+}

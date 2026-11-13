@@ -1,0 +1,108 @@
+# Tamizhi Standard Library — String Module
+# std/string.tzh: Character classification, padding, repetition, reversal, and StringBuilder.
+
+# Character classification
+seyal is_digit(c : char) : bool {
+    kudu (c >= '0' && c <= '9');
+}
+
+seyal is_alpha(c : char) : bool {
+    kudu ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
+}
+
+seyal is_alphanumeric(c : char) : bool {
+    kudu (is_alpha(c) || is_digit(c));
+}
+
+seyal is_space(c : char) : bool {
+    kudu (c == ' ' || c == '\t' || c == '\n' || c == '\r');
+}
+
+seyal to_upper_char(c : char) : char {
+    if (c >= 'a' && c <= 'z') {
+        kudu (char)(c - 32);
+    }
+    kudu c;
+}
+
+seyal to_lower_char(c : char) : char {
+    if (c >= 'A' && c <= 'Z') {
+        kudu (char)(c + 32);
+    }
+    kudu c;
+}
+
+# String utilities
+seyal str_repeat(s : string, times : int) : string {
+    if (times <= 0) { kudu ""; }
+    edu res : string = "";
+    for (edu i : int = 0; i < times; i = i + 1) {
+        res += s;
+    }
+    kudu res;
+}
+
+seyal str_pad_left(s : string, total_len : int, pad_char : char) : string {
+    edu current_len : int = s.length();
+    if (current_len >= total_len) { kudu s; }
+    edu padding : string = str_repeat(char_to_str(pad_char), total_len - current_len);
+    kudu padding + s;
+}
+
+seyal str_pad_right(s : string, total_len : int, pad_char : char) : string {
+    edu current_len : int = s.length();
+    if (current_len >= total_len) { kudu s; }
+    edu padding : string = str_repeat(char_to_str(pad_char), total_len - current_len);
+    kudu s + padding;
+}
+
+seyal str_reverse(s : string) : string {
+    edu len : int = s.length();
+    edu res : string = "";
+    for (edu i : int = len - 1; i >= 0; i = i - 1) {
+        res += char_to_str(s[i]);
+    }
+    kudu res;
+}
+
+# StringBuilder class
+vaguppu StringBuilder {
+    buf : string;
+
+    seyal uruvakku() {
+        this.buf = "";
+    }
+
+    seyal append(s : string) : void {
+        this.buf += s;
+    }
+
+    seyal append_int(n : int) : void {
+        this.buf += int_to_str(n);
+    }
+
+    seyal append_float(f : float) : void {
+        this.buf += float_to_str(f);
+    }
+
+    seyal append_char(c : char) : void {
+        this.buf += char_to_str(c);
+    }
+
+    seyal append_line(s : string) : void {
+        this.buf += s;
+        this.buf += "\n";
+    }
+
+    seyal clear() : void {
+        this.buf = "";
+    }
+
+    seyal length() : int {
+        kudu this.buf.length();
+    }
+
+    seyal to_str() : string {
+        kudu this.buf;
+    }
+}

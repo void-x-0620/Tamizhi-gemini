@@ -73,3 +73,4 @@ seyal main(): int {
     test_fstring_escapes();
     kudu 0;
 }
+

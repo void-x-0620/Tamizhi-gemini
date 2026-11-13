@@ -1,6 +1,6 @@
 # Binaries
-tamizhi
-tamizhi-asan
+/tamizhi
+/tamizhi-asan
 a.out
 
 # Object files

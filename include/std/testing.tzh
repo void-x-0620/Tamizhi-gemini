@@ -1,0 +1,67 @@
+# Tamizhi Standard Library — Testing Module
+# std/testing.tzh: Lightweight assertion and unit test framework.
+
+static edu g_tz_total_tests  : int = 0;
+static edu g_tz_passed_tests : int = 0;
+static edu g_tz_failed_tests : int = 0;
+
+seyal assert_true(cond : bool, name : string) : bool {
+    g_tz_total_tests = g_tz_total_tests + 1;
+    if (cond) {
+        g_tz_passed_tests = g_tz_passed_tests + 1;
+        pathi("  [PASS] %s\n", name);
+        kudu true;
+    }
+    g_tz_failed_tests = g_tz_failed_tests + 1;
+    pathi("  [FAIL] %s: condition is false\n", name);
+    kudu false;
+}
+
+seyal assert_false(cond : bool, name : string) : bool {
+    kudu assert_true(!cond, name);
+}
+
+seyal assert_eq_int(expected : int, actual : int, name : string) : bool {
+    g_tz_total_tests = g_tz_total_tests + 1;
+    if (expected == actual) {
+        g_tz_passed_tests = g_tz_passed_tests + 1;
+        pathi("  [PASS] %s\n", name);
+        kudu true;
+    }
+    g_tz_failed_tests = g_tz_failed_tests + 1;
+    pathi("  [FAIL] %s: expected %d, got %d\n", name, expected, actual);
+    kudu false;
+}
+
+seyal assert_eq_str(expected : string, actual : string, name : string) : bool {
+    g_tz_total_tests = g_tz_total_tests + 1;
+    if (expected == actual) {
+        g_tz_passed_tests = g_tz_passed_tests + 1;
+        pathi("  [PASS] %s\n", name);
+        kudu true;
+    }
+    g_tz_failed_tests = g_tz_failed_tests + 1;
+    pathi("  [FAIL] %s: expected '%s', got '%s'\n", name, expected, actual);
+    kudu false;
+}
+
+seyal assert_eq_float(expected : float, actual : float, epsilon : float, name : string) : bool {
+    g_tz_total_tests = g_tz_total_tests + 1;
+    edu diff : float = expected - actual;
+    if (diff < 0.0) { diff = -diff; }
+    if (diff <= epsilon) {
+        g_tz_passed_tests = g_tz_passed_tests + 1;
+        pathi("  [PASS] %s\n", name);
+        kudu true;
+    }
+    g_tz_failed_tests = g_tz_failed_tests + 1;
+    pathi("  [FAIL] %s: expected %f, got %f\n", name, expected, actual);
+    kudu false;
+}
+
+seyal test_summary() : int {
+    pathi("----------------------------------------\n");
+    pathi("Tests: %d | Passed: %d | Failed: %d\n",
+          g_tz_total_tests, g_tz_passed_tests, g_tz_failed_tests);
+    kudu g_tz_failed_tests;
+}

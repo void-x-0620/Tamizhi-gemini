@@ -1,0 +1,11 @@
+# Tamizhi Standard Library — Full Umbrella Header
+# std.tzh: Imports math, string, io, os, time, random, collections, and testing.
+
+serku "std/math.tzh";
+serku "std/string.tzh";
+serku "std/io.tzh";
+serku "std/os.tzh";
+serku "std/time.tzh";
+serku "std/random.tzh";
+serku "std/collections.tzh";
+serku "std/testing.tzh";

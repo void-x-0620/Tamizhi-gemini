@@ -1,0 +1,38 @@
+# Tamizhi Standard Library — Random Module
+# std/random.tzh: PRNG seed, integers, ranges, floating-point, and boolean choices.
+
+veli "<stdlib.h>";
+veli seyal rand_c_rand  = rand() : int;
+veli seyal rand_c_srand = srand(seed : int) : void;
+
+seyal rand_seed(seed : int) : void {
+    rand_c_srand(seed);
+}
+
+seyal rand_int() : int {
+    kudu rand_c_rand();
+}
+
+seyal rand_range(min_val : int, max_val : int) : int {
+    if (min_val >= max_val) { kudu min_val; }
+    edu span : int = max_val - min_val + 1;
+    edu r : int = rand_c_rand();
+    if (r < 0) { r = -r; }
+    kudu min_val + (r % span);
+}
+
+seyal rand_float() : float {
+    edu r : int = rand_c_rand() % 1000000;
+    if (r < 0) { r = -r; }
+    kudu (float)r / 1000000.0;
+}
+
+seyal rand_bool() : bool {
+    edu r : int = rand_c_rand();
+    if (r < 0) { r = -r; }
+    kudu (r % 2) == 1;
+}
+
+seyal rand_choice_int(a : int, b : int) : int {
+    kudu rand_bool() ? a : b;
+}
