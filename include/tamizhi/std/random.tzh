@@ -36,3 +36,4 @@ seyal rand_bool() : bool {
 seyal rand_choice_int(a : int, b : int) : int {
     kudu rand_bool() ? a : b;
 }
+

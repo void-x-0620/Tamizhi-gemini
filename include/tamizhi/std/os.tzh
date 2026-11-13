@@ -52,3 +52,4 @@ seyal os_setenv(name : string, value : string, overwrite : bool) : bool {
 seyal os_exec(cmd : string) : int {
     kudu sys_system(cmd);
 }
+

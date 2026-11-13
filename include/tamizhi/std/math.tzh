@@ -154,3 +154,4 @@ seyal madippu(n : int) : int {
 seyal ellai(val : float, min_val : float, max_val : float) : float {
     kudu clamp(val, min_val, max_val);
 }
+

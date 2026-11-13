@@ -99,3 +99,4 @@ seyal dir_create(path : string) : bool {
 seyal dir_remove(path : string) : bool {
     kudu io_c_remove(path) == 0;
 }
+
